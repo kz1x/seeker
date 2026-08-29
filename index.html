@@ -3,35 +3,31 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TrafficVision • Orange County, CA</title>
+    <title>TrafficVision • Caltrans Live</title>
 
-    <!-- Leaflet CSS — loaded early, HTTPS only -->
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        /* ——— RESET & FULL HEIGHT ——— */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         html,
         body {
             height: 100%;
             width: 100%;
             background: #0b0e14;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             color: #e8edf5;
             overflow: hidden;
         }
-
         body {
             display: flex;
             flex-direction: column;
         }
 
-        /* ——— TOP BAR ——— */
         .topbar {
             background: #141a24;
             padding: 12px 20px;
@@ -44,7 +40,6 @@
             gap: 10px;
             z-index: 1000;
         }
-
         .brand {
             display: flex;
             align-items: center;
@@ -105,23 +100,19 @@
         .search-wrap button:hover {
             background: #2f3d4f;
         }
-
         .stats {
             font-size: 0.75rem;
             color: #8fa3bf;
             white-space: nowrap;
         }
 
-        /* ——— MAP CONTAINER ——— */
         #map {
             flex: 1;
             width: 100%;
             min-height: 0;
-            /* critical for flex children */;
             background: #0b0e14;
         }
 
-        /* ——— LOADING OVERLAY ——— */
         #loading {
             position: fixed;
             top: 0;
@@ -157,7 +148,6 @@
             }
         }
 
-        /* ——— LEAFLET OVERRIDES ——— */
         .leaflet-control-zoom a {
             background: #141a24 !important;
             color: #e8edf5 !important;
@@ -183,8 +173,14 @@
         .leaflet-popup-content strong {
             color: #5fc3ff;
         }
+        .leaflet-popup-content a {
+            color: #5fc3ff;
+            text-decoration: none;
+        }
+        .leaflet-popup-content a:hover {
+            text-decoration: underline;
+        }
 
-        /* ——— RESPONSIVE ——— */
         @media (max-width: 650px) {
             .topbar {
                 flex-direction: column;
@@ -202,41 +198,31 @@
 </head>
 <body>
 
-    <!-- ——— LOADING OVERLAY ——— -->
     <div id="loading">
         <div class="spinner"></div>
-        <span>Loading cameras…</span>
+        <span>Loading live cameras from Caltrans…</span>
     </div>
 
-    <!-- ——— TOP BAR ——— -->
     <header class="topbar">
         <div class="brand">
             <span>🚦</span> Traffic<span>Vision</span>
             <span class="badge">live</span>
         </div>
-
         <div class="search-wrap">
             <input type="text" id="searchInput" placeholder="Search road, city, or ID…" />
             <button id="searchBtn">Search</button>
         </div>
-
         <div class="stats" id="cameraCount">Loading…</div>
     </header>
 
-    <!-- ——— MAP ——— -->
     <div id="map"></div>
 
-    <!-- ——— LEAFLET JS ——— -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
     </script>
 
     <script>
-        // ───────────────────────────────────────────────
-        //  WAIT FOR DOM + LEAFLET
-        // ───────────────────────────────────────────────
+        (function() {
 
-        (function init() {
-            // If Leaflet didn't load, show error
             if (typeof L === 'undefined') {
                 document.getElementById('loading').innerHTML = `
                             <div style="color:#ff6b6b;font-size:1.4rem;margin-bottom:12px;">⚠️</div>
@@ -246,129 +232,159 @@
                 return;
             }
 
-            // ─── DATA ──────────────────────────────────
-            const cameras = [
-                // Santa Ana
-                { id: 'SA-01', name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5' },
-                { id: 'SA-02', name: 'SR-22 @ Main St', lat: 33.7498, lng: -117.8665, road: 'SR-22' },
-
-                // Orange
-                { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57' },
-                { id: 'OR-02', name: 'I-5 @ Tustin St', lat: 33.7870, lng: -117.8250, road: 'I-5' },
-
-                // Anaheim
-                { id: 'AN-01', name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5' },
-                { id: 'AN-02', name: 'SR-91 @ Harbor Blvd', lat: 33.8345, lng: -117.9145, road: 'SR-91' },
-                { id: 'AN-03', name: 'I-5 @ Katella Ave', lat: 33.8030, lng: -117.8880, road: 'I-5' },
-
-                // Irvine
-                { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405' },
-                { id: 'IR-02', name: 'SR-133 @ Irvine Blvd', lat: 33.6870, lng: -117.8270, road: 'SR-133' },
-
-                // Huntington Beach
-                { id: 'HB-01', name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1' },
-                { id: 'HB-02', name: 'I-405 @ Goldenwest St', lat: 33.7100, lng: -118.0150, road: 'I-405' },
-
-                // Fullerton
-                { id: 'FU-01', name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91' },
-
-                // Garden Grove
-                { id: 'GG-01', name: 'SR-22 @ Euclid St', lat: 33.7750, lng: -117.9450, road: 'SR-22' },
-
-                // Costa Mesa
-                { id: 'CM-01', name: 'I-405 @ Harbor Blvd', lat: 33.6640, lng: -117.9140, road: 'I-405' },
-
-                // Newport Beach
-                { id: 'NB-01', name: 'SR-1 @ Newport Blvd', lat: 33.6270, lng: -117.9310, road: 'SR-1' },
-
-                // Mission Viejo
-                { id: 'MV-01', name: 'I-5 @ Oso Pkwy', lat: 33.5870, lng: -117.6680, road: 'I-5' },
-
-                // Rancho Santa Margarita
-                { id: 'RSM-01', name: 'SR-241 @ Santa Margarita', lat: 33.6430, lng: -117.5750, road: 'SR-241' },
-            ];
+            // ─── CONFIG ──────────────────────────────
+            // District 8 covers San Bernardino, Riverside, etc.
+            // You can change this to any district 1-12
+            const DISTRICT = 8;
+            const API_URL =
+                `https://cwwp2.dot.ca.gov/data/d${DISTRICT}/cctv/cctvStatusD${String(DISTRICT).padStart(2, '0')}.json`;
 
             // ─── MAP ──────────────────────────────────
             const map = L.map('map', {
-                center: [33.75, -117.90],
-                zoom: 11,
+                center: [34.0, -117.5],
+                zoom: 9,
                 zoomControl: true,
             });
 
-            // Tile layer — HTTPS only
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB',
                 subdomains: 'abcd',
                 maxZoom: 19,
             }).addTo(map);
 
-            // ─── MARKERS ──────────────────────────────
-            const markers = [];
+            // ─── STATE ─────────────────────────────────
+            let allMarkers = [];
+            let markerData = [];
 
-            cameras.forEach(cam => {
-                const marker = L.circleMarker([cam.lat, cam.lng], {
-                    radius: 7,
-                    fillColor: '#5fc3ff',
-                    color: '#1f2a37',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.85,
+            // ─── LOAD DATA ─────────────────────────────
+            fetch(API_URL)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
                 })
-                    .addTo(map)
-                    .bindPopup(`
-                                <strong>${cam.name}</strong><br />
-                                Road: ${cam.road}<br />
-                                ID: ${cam.id}<br />
-                                <span style="color:#5fc3ff;font-size:0.7rem;">● live</span>
-                            `);
+                .then(json => {
+                    const cameras = json.data || [];
 
-                markers.push({ marker, data: cam });
-            });
+                    if (!cameras.length) {
+                        throw new Error('No camera data found');
+                    }
 
-            // ─── UPDATE COUNTER ──────────────────────
-            document.getElementById('cameraCount').textContent = `${cameras.length} cameras`;
+                    // Parse and add markers
+                    cameras.forEach(item => {
+                        const cam = item.cctv;
+                        if (!cam || !cam.location) return;
 
-            // ─── SEARCH ──────────────────────────────
-            function performSearch(query) {
-                const q = query.trim().toLowerCase();
-                if (!q) {
-                    map.setView([33.75, -117.90], 11);
-                    return;
-                }
+                        const loc = cam.location;
+                        const lat = parseFloat(loc.latitude);
+                        const lng = parseFloat(loc.longitude);
+                        if (isNaN(lat) || isNaN(lng)) return;
 
-                const found = markers.filter(({ data }) =>
-                    data.name.toLowerCase().includes(q) ||
-                    data.road.toLowerCase().includes(q) ||
-                    data.id.toLowerCase().includes(q)
-                );
+                        const name = loc.locationName || 'Unknown';
+                        const road = loc.route || '';
+                        const nearby = loc.nearbyPlace || '';
+                        const id = cam.index || '';
 
-                if (found.length === 0) {
-                    alert(`No cameras found for "${query}"`);
-                    return;
-                }
+                        // Build popup with image link
+                        let popupContent = `<strong>${name}</strong><br />`;
+                        if (road) popupContent += `Road: ${road}<br />`;
+                        if (nearby) popupContent += `Near: ${nearby}<br />`;
+                        if (id) popupContent += `ID: ${id}<br />`;
 
-                const first = found[0];
-                map.setView([first.data.lat, first.data.lng], 13);
-                first.marker.openPopup();
-            }
+                        // Add image link if available
+                        const imgUrl = cam.imageData?.static?.currentImageURL;
+                        if (imgUrl) {
+                            popupContent +=
+                                `<a href="${imgUrl}" target="_blank">📸 View Image</a><br />`;
+                        }
 
-            document.getElementById('searchBtn').addEventListener('click', () =>
-                performSearch(document.getElementById('searchInput').value)
-            );
-            document.getElementById('searchInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') performSearch(e.target.value);
-            });
+                        // Add streaming link if available
+                        const streamUrl = cam.imageData?.streamingVideoURL;
+                        if (streamUrl) {
+                            popupContent +=
+                                `<a href="${streamUrl}" target="_blank">🎥 Live Stream</a><br />`;
+                        }
 
-            // ─── HIDE LOADING ─────────────────────────
-            setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
-            }, 400);
+                        popupContent += `<span style="color:#5fc3ff;font-size:0.7rem;">● live</span>`;
+
+                        const marker = L.circleMarker([lat, lng], {
+                            radius: 6,
+                            fillColor: '#5fc3ff',
+                            color: '#1f2a37',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.85,
+                        })
+                            .addTo(map)
+                            .bindPopup(popupContent);
+
+                        allMarkers.push(marker);
+                        markerData.push({
+                            marker,
+                            name: name.toLowerCase(),
+                            road: road.toLowerCase(),
+                            nearby: nearby.toLowerCase(),
+                            id: id.toLowerCase(),
+                            lat,
+                            lng,
+                        });
+                    });
+
+                    // Update counter
+                    document.getElementById('cameraCount').textContent =
+                        `${markerData.length} cameras (District ${DISTRICT})`;
+
+                    // Hide loading
+                    document.getElementById('loading').classList.add('hidden');
+                    map.invalidateSize();
+
+                    console.log(`🚦 Loaded ${markerData.length} cameras from District ${DISTRICT}`);
+
+                    // ─── SEARCH ──────────────────────────
+                    function performSearch(query) {
+                        const q = query.trim().toLowerCase();
+                        if (!q) {
+                            map.setView([34.0, -117.5], 9);
+                            return;
+                        }
+
+                        const results = markerData.filter(d =>
+                            d.name.includes(q) ||
+                            d.road.includes(q) ||
+                            d.nearby.includes(q) ||
+                            d.id.includes(q)
+                        );
+
+                        if (results.length === 0) {
+                            alert(`No cameras found for "${query}"`);
+                            return;
+                        }
+
+                        // Center on first result
+                        const first = results[0];
+                        map.setView([first.lat, first.lng], 12);
+                        first.marker.openPopup();
+                    }
+
+                    document.getElementById('searchBtn').addEventListener('click', () =>
+                        performSearch(document.getElementById('searchInput').value)
+                    );
+                    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') performSearch(e.target.value);
+                    });
+
+                })
+                .catch(err => {
+                    console.error('Failed to load camera data:', err);
+                    document.getElementById('loading').innerHTML = `
+                                <div style="color:#ff6b6b;font-size:1.4rem;margin-bottom:12px;">⚠️</div>
+                                <span style="color:#ff6b6b;">Failed to load camera data.</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Try changing the DISTRICT variable (1-12).</span>
+                            `;
+                });
 
             // ─── RESIZE SAFETY ────────────────────────
-            setTimeout(() => map.invalidateSize(), 600);
-
-            // ─── LOG ──────────────────────────────────
-            console.log(`🚦 TrafficVision · ${cameras.length} cameras loaded`);
+            setTimeout(() => map.invalidateSize(), 800);
 
         })();
     </script>
