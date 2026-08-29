@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrafficVision • Orange County, CA</title>
+
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b0e14;
+            color: #e8edf5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── top bar ── */
+        .topbar {
+            background: #141a24;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a3340;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .topbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: 0.3px;
+        }
+
+        .topbar .brand span {
+            color: #5fc3ff;
+        }
+
+        .topbar .badge {
+            background: #1f2a37;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            color: #8fa3bf;
+            border: 1px solid #2f3d4f;
+        }
+
+        .search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1 1 320px;
+            max-width: 480px;
+        }
+
+        .search-wrap input {
+            flex: 1;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: 1px solid #2a3340;
+            background: #0b0e14;
+            color: #e8edf5;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .search-wrap input:focus {
+            border-color: #5fc3ff;
+            box-shadow: 0 0 0 2px rgba(95, 195, 255, 0.15);
+        }
+
+        .search-wrap input::placeholder {
+            color: #5f738f;
+        }
+
+        .search-wrap button {
+            background: #1f2a37;
+            border: none;
+            color: #e8edf5;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid #2a3340;
+            transition: 0.2s;
+        }
+
+        .search-wrap button:hover {
+            background: #2f3d4f;
+            border-color: #3f5268;
+        }
+
+        .stats {
+            font-size: 0.8rem;
+            color: #8fa3bf;
+            white-space: nowrap;
+        }
+
+        /* ── map container ── */
+        #map {
+            flex: 1;
+            width: 100%;
+            background: #0b0e14;
+        }
+
+        /* ── Leaflet overrides ── */
+        .leaflet-control-zoom a {
+            background: #141a24 !important;
+            color: #e8edf5 !important;
+            border-color: #2a3340 !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: #1f2a37 !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #141a24 !important;
+            color: #e8edf5 !important;
+            border-radius: 10px !important;
+            border: 1px solid #2a3340;
+        }
+
+        .leaflet-popup-tip {
+            background: #141a24 !important;
+        }
+
+        .leaflet-popup-content {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            min-width: 160px;
+        }
+
+        .leaflet-popup-content strong {
+            color: #5fc3ff;
+        }
+
+        .camera-marker {
+            background: #1f2a37;
+            border: 2px solid #5fc3ff;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 0 10px rgba(95, 195, 255, 0.3);
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 700px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px 16px;
+            }
+            .search-wrap {
+                max-width: 100%;
+                flex: 1;
+            }
+            .stats {
+                text-align: right;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ TOP BAR ═══ -->
+    <header class="topbar">
+        <div class="brand">
+            <span>🚦</span> Traffic<span>Vision</span>
+            <span class="badge">live</span>
+        </div>
+
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="Search city, road, or camera…" />
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div class="stats" id="cameraCount">0 cameras</div>
+    </header>
+
+    <!-- ═══ MAP ═══ -->
+    <div id="map"></div>
+
+    <script>
+        // ──────────────────────────────────────────────
+        //  1.  SAMPLE CAMERA DATA  (Orange County, CA)
+        // ──────────────────────────────────────────────
+
+        const cameras = [
+            // ── Santa Ana ──
+            { id: 'SA-01', name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', status: 'live' },
+            { id: 'SA-02', name: 'SR-22 @ Main St', lat: 33.7498, lng: -117.8665, road: 'SR-22', status: 'live' },
+
+            // ── Orange ──
+            { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', status: 'live' },
+            { id: 'OR-02', name: 'I-5 @ Tustin St', lat: 33.7870, lng: -117.8250, road: 'I-5', status: 'live' },
+
+            // ── Anaheim ──
+            { id: 'AN-01', name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', status: 'live' },
+            { id: 'AN-02', name: 'SR-91 @ Harbor Blvd', lat: 33.8345, lng: -117.9145, road: 'SR-91', status: 'live' },
+            { id: 'AN-03', name: 'I-5 @ Katella Ave', lat: 33.8030, lng: -117.8880, road: 'I-5', status: 'live' },
+
+            // ── Irvine ──
+            { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', status: 'live' },
+            { id: 'IR-02', name: 'SR-133 @ Irvine Blvd', lat: 33.6870, lng: -117.8270, road: 'SR-133', status: 'live' },
+
+            // ── Huntington Beach ──
+            { id: 'HB-01', name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1', status: 'live' },
+            { id: 'HB-02', name: 'I-405 @ Goldenwest St', lat: 33.7100, lng: -118.0150, road: 'I-405', status: 'live' },
+
+            // ── Fullerton ──
+            { id: 'FU-01', name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91', status: 'live' },
+
+            // ── Garden Grove ──
+            { id: 'GG-01', name: 'SR-22 @ Euclid St', lat: 33.7750, lng: -117.9450, road: 'SR-22', status: 'live' },
+
+            // ── Costa Mesa ──
+            { id: 'CM-01', name: 'I-405 @ Harbor Blvd', lat: 33.6640, lng: -117.9140, road: 'I-405', status: 'live' },
+        ];
+
+        // ──────────────────────────────────────────────
+        //  2.  INIT MAP
+        // ──────────────────────────────────────────────
+
+        const map = L.map('map', {
+            center: [33.75, -117.90], // Orange County centroid
+            zoom: 11,
+            zoomControl: true,
+        });
+
+        // dark tile layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19,
+        }).addTo(map);
+
+        // ──────────────────────────────────────────────
+        //  3.  ADD CAMERA MARKERS
+        // ──────────────────────────────────────────────
+
+        const markers = [];
+
+        cameras.forEach(cam => {
+            const marker = L.circleMarker([cam.lat, cam.lng], {
+                radius: 7,
+                fillColor: '#5fc3ff',
+                color: '#1f2a37',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.85,
+            })
+                .addTo(map)
+                .bindPopup(`
+                    <strong>${cam.name}</strong><br />
+                    Road: ${cam.road}<br />
+                    ID: ${cam.id}<br />
+                    <span style="color:#5fc3ff;font-size:0.75rem;">● live</span>
+                `);
+
+            // store reference
+            markers.push({ marker, data: cam });
+        });
+
+        // update camera count
+        document.getElementById('cameraCount').textContent = `${cameras.length} cameras`;
+
+        // ──────────────────────────────────────────────
+        //  4.  SEARCH  (simple name/road filter)
+        // ──────────────────────────────────────────────
+
+        function performSearch(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) {
+                // show all
+                markers.forEach(({ marker }) => marker.setLatLng(marker.getLatLng()));
+                map.setView([33.75, -117.90], 11);
+                return;
+            }
+
+            const found = markers.filter(({ data }) =>
+                data.name.toLowerCase().includes(q) ||
+                data.road.toLowerCase().includes(q) ||
+                data.id.toLowerCase().includes(q)
+            );
+
+            if (found.length === 0) {
+                alert(`No cameras found for "${query}"`);
+                return;
+            }
+
+            // zoom to first result
+            const first = found[0];
+            map.setView([first.data.lat, first.data.lng], 13);
+
+            // flash / highlight: just open popup
+            first.marker.openPopup();
+        }
+
+        // ── wire up search ──
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+
+        searchBtn.addEventListener('click', () => performSearch(searchInput.value));
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') performSearch(searchInput.value);
+        });
+
+        // ──────────────────────────────────────────────
+        //  5.  SMALL WELCOME POPUP
+        // ──────────────────────────────────────────────
+
+        setTimeout(() => {
+            L.popup({
+                closeButton: true,
+                className: 'welcome-popup',
+            })
+                .setLatLng([33.75, -117.90])
+                .setContent(`
+                    <strong>📍 Orange County, CA</strong><br />
+                    ${cameras.length} live cameras • search by road or city
+                `)
+                .openOn(map);
+        }, 600);
+
+        // ──────────────────────────────────────────────
+        //  6.  (optional) log to console
+        // ──────────────────────────────────────────────
+
+        console.log(`🚦 TrafficVision · ${cameras.length} cameras loaded`);
+        console.log('📍 Orange County, CA');
+    </script>
+
+</body>
+</html>
