@@ -251,12 +251,16 @@
             flex: 1;
             position: relative;
             background: #0a0e14;
+            min-height: 200px;
         }
 
         #map {
             width: 100%;
             height: 100%;
             background: #0a0e14;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* ─── PREVIEW OVERLAY ─── */
@@ -467,10 +471,10 @@
                     <input type="text" id="searchInput" placeholder="Search cameras, roads, cities…" />
                 </div>
                 <div class="sidebar-categories">
-                    <span class="active">All</span>
-                    <span>California</span>
-                    <span>Collections</span>
-                    <span>Orange</span>
+                    <span class="active">ALL</span>
+                    <span>CALIFORNIA</span>
+                    <span>COLLECTIONS</span>
+                    <span>ORANGE</span>
                 </div>
                 <div class="sidebar-list" id="cameraList"></div>
             </aside>
@@ -543,11 +547,46 @@
                 zoomControl: true,
             });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
+            // ─── TILE LAYERS WITH FALLBACK ─────────────
+            // Primary: Stamen Toner (dark, no key needed)
+            const stamenToner = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}{r}.png', {
+                attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>',
+                subdomains: 'abcd',
+                maxZoom: 19,
+            });
+
+            // Fallback 1: OpenStreetMap (light, but we'll darken it with CSS)
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 subdomains: 'abc',
                 maxZoom: 19,
-            }).addTo(map);
+            });
+
+            // Fallback 2: CartoDB Dark (sometimes works without key)
+            const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19,
+            });
+
+            // Try Stamen first, fallback to OSM if it fails
+            let currentLayer = stamenToner.addTo(map);
+
+            // If Stamen has loading errors, switch to OSM
+            stamenToner.on('tileerror', function(err) {
+                console.warn('Stamen tiles failed, switching to OSM...');
+                map.removeLayer(stamenToner);
+                currentLayer = osmLayer.addTo(map);
+                // Apply dark filter to OSM tiles
+                document.querySelector('.leaflet-tile-pane').style.filter = 'brightness(0.6) contrast(1.2) saturate(0.7)';
+            });
+
+            // Also try Carto if OSM fails
+            osmLayer.on('tileerror', function() {
+                console.warn('OSM tiles failed, switching to CartoDB Dark...');
+                map.removeLayer(osmLayer);
+                currentLayer = cartoDark.addTo(map);
+            });
 
             // ─── LOAD DATA ──────────────────────────────
             fetch(DATA_URL)
@@ -563,7 +602,7 @@
                     if (!caCams.length) throw new Error('No CA cameras');
 
                     allCameras = caCams.map(cam => ({
-                        id: cam.id || '',
+                        id: cam.id || 'cam-' + Math.random().toString(36).substr(2, 6),
                         name: cam.name || 'Unknown Camera',
                         road: cam.road || '',
                         city: cam.city || '',
@@ -572,27 +611,19 @@
                         lng: parseFloat(cam.lng),
                         url: cam.url || '',
                         state: cam.state || 'CA',
-                        // fake car count for UI
                         cars: Math.floor(Math.random() * 80) + 10,
                     })).filter(c => !isNaN(c.lat) && !isNaN(c.lng));
 
-                    // Sort by name
                     allCameras.sort((a, b) => a.name.localeCompare(b.name));
 
                     filteredCameras = [...allCameras];
-
-                    // Update stats
                     camCountEl.textContent = allCameras.length;
                     const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
                     carCountEl.textContent = totalCars.toLocaleString();
 
-                    // Render list
                     renderList(filteredCameras);
-
-                    // Add markers
                     addMarkers(allCameras);
 
-                    // Hide loading
                     document.getElementById('loading').classList.add('hidden');
                     map.invalidateSize();
 
@@ -608,7 +639,6 @@
                                 <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data…</span>
                             `;
 
-                    // ─── SAMPLE FALLBACK ──────────────────
                     loadSampleData();
                 });
 
@@ -635,7 +665,6 @@
 
                 cameraListEl.innerHTML = html;
 
-                // Click handlers
                 cameraListEl.querySelectorAll('.camera-item').forEach(el => {
                     el.addEventListener('click', () => {
                         const id = el.dataset.id;
@@ -647,7 +676,6 @@
 
             // ─── ADD MARKERS ────────────────────────────
             function addMarkers(cameras) {
-                // Clear existing markers
                 markers.forEach(m => map.removeLayer(m));
                 markers = [];
                 markerMap = {};
@@ -681,19 +709,13 @@
             // ─── SELECT CAMERA ──────────────────────────
             function selectCamera(cam) {
                 selectedCamera = cam;
-
-                // Update list
                 renderList(filteredCameras);
-
-                // Zoom map
                 map.setView([cam.lat, cam.lng], 14);
 
-                // Open popup
                 if (markerMap[cam.id]) {
                     markerMap[cam.id].openPopup();
                 }
 
-                // Show preview
                 showPreview(cam);
             }
 
@@ -703,9 +725,8 @@
                 previewRoad.textContent = cam.road || 'Unknown road';
                 previewLocation.textContent = [cam.city, cam.county].filter(Boolean).join(', ') || 'California';
 
-                // Image
                 if (cam.url) {
-                    previewImage.innerHTML = `<img src="${cam.url}" alt="${cam.name}" loading="lazy" />`;
+                    previewImage.innerHTML = `<img src="${cam.url}" alt="${cam.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'placeholder\'>📸 Image failed to load</div>'" />`;
                 } else {
                     previewImage.innerHTML = `<div class="placeholder">📸 No live image available</div>`;
                 }
@@ -736,25 +757,23 @@
                 }
                 renderList(filteredCameras);
 
-                // Update markers to show only filtered
-                // Remove all markers, re-add filtered
                 markers.forEach(m => map.removeLayer(m));
                 markers = [];
                 markerMap = {};
                 addMarkers(filteredCameras);
             });
 
-            // ─── SAMPLE DATA FALLBACK ───────────────────
+            // ─── SAMPLE FALLBACK ────────────────────────
             function loadSampleData() {
                 const sample = [
                     { id: 'SA-01', name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', city: 'Santa Ana',
                         county: 'Orange', url: '', cars: 42 },
-                    { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', city: 'Orange',
-                        county: 'Orange', url: '', cars: 28 },
+                    { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57',
+                        city: 'Orange', county: 'Orange', url: '', cars: 28 },
                     { id: 'AN-01', name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', city: 'Anaheim',
                         county: 'Orange', url: '', cars: 65 },
-                    { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
-                        county: 'Orange', url: '', cars: 33 },
+                    { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405',
+                        city: 'Irvine', county: 'Orange', url: '', cars: 33 },
                     { id: 'HB-01', name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1',
                         city: 'Huntington Beach', county: 'Orange', url: '', cars: 51 },
                     { id: 'FU-01', name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91',
@@ -785,7 +804,8 @@
                 console.log('📡 Using sample data (fallback)');
             }
 
-            // ─── RESIZE SAFETY ──────────────────────────
+            // ─── FORCE MAP RESIZE ───────────────────────
+            setTimeout(() => map.invalidateSize(), 300);
             setTimeout(() => map.invalidateSize(), 800);
             window.addEventListener('resize', () => map.invalidateSize());
 
