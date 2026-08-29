@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TrafficVision • Caltrans Live</title>
+    <title>TrafficVision • Live Cameras</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -200,7 +200,7 @@
 
     <div id="loading">
         <div class="spinner"></div>
-        <span>Loading live cameras from Caltrans…</span>
+        <span>Loading live cameras from OpenTrafficCamMap…</span>
     </div>
 
     <header class="topbar">
@@ -232,17 +232,15 @@
                 return;
             }
 
-            // ─── CONFIG ──────────────────────────────
-            // District 8 covers San Bernardino, Riverside, etc.
-            // You can change this to any district 1-12
-            const DISTRICT = 8;
-            const API_URL =
-                `https://cwwp2.dot.ca.gov/data/d${DISTRICT}/cctv/cctvStatusD${String(DISTRICT).padStart(2, '0')}.json`;
+            // ─── DATA URL ─────────────────────────────
+            // This JSON contains cameras for the USA (including California)
+            const DATA_URL =
+                'https://raw.githubusercontent.com/AidanWelch/OpenTrafficCamMap/main/cameras/USA.json';
 
             // ─── MAP ──────────────────────────────────
             const map = L.map('map', {
-                center: [34.0, -117.5],
-                zoom: 9,
+                center: [33.75, -117.90],
+                zoom: 11,
                 zoomControl: true,
             });
 
@@ -257,57 +255,50 @@
             let markerData = [];
 
             // ─── LOAD DATA ─────────────────────────────
-            fetch(API_URL)
+            fetch(DATA_URL)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     return res.json();
                 })
-                .then(json => {
-                    const cameras = json.data || [];
+                .then(data => {
+                    // Filter for California only
+                    const californiaCameras = data.filter(cam =>
+                        cam.state && cam.state.toUpperCase() === 'CA'
+                    );
 
-                    if (!cameras.length) {
-                        throw new Error('No camera data found');
+                    if (!californiaCameras.length) {
+                        throw new Error('No California cameras found');
                     }
 
-                    // Parse and add markers
-                    cameras.forEach(item => {
-                        const cam = item.cctv;
-                        if (!cam || !cam.location) return;
-
-                        const loc = cam.location;
-                        const lat = parseFloat(loc.latitude);
-                        const lng = parseFloat(loc.longitude);
+                    // Add markers
+                    californiaCameras.forEach(cam => {
+                        const lat = parseFloat(cam.lat);
+                        const lng = parseFloat(cam.lng);
                         if (isNaN(lat) || isNaN(lng)) return;
 
-                        const name = loc.locationName || 'Unknown';
-                        const road = loc.route || '';
-                        const nearby = loc.nearbyPlace || '';
-                        const id = cam.index || '';
+                        const name = cam.name || 'Unknown Camera';
+                        const road = cam.road || '';
+                        const city = cam.city || '';
+                        const county = cam.county || '';
+                        const id = cam.id || '';
 
-                        // Build popup with image link
                         let popupContent = `<strong>${name}</strong><br />`;
                         if (road) popupContent += `Road: ${road}<br />`;
-                        if (nearby) popupContent += `Near: ${nearby}<br />`;
+                        if (city) popupContent += `City: ${city}<br />`;
+                        if (county) popupContent += `County: ${county}<br />`;
                         if (id) popupContent += `ID: ${id}<br />`;
 
                         // Add image link if available
-                        const imgUrl = cam.imageData?.static?.currentImageURL;
+                        const imgUrl = cam.url;
                         if (imgUrl) {
                             popupContent +=
                                 `<a href="${imgUrl}" target="_blank">📸 View Image</a><br />`;
                         }
 
-                        // Add streaming link if available
-                        const streamUrl = cam.imageData?.streamingVideoURL;
-                        if (streamUrl) {
-                            popupContent +=
-                                `<a href="${streamUrl}" target="_blank">🎥 Live Stream</a><br />`;
-                        }
-
                         popupContent += `<span style="color:#5fc3ff;font-size:0.7rem;">● live</span>`;
 
                         const marker = L.circleMarker([lat, lng], {
-                            radius: 6,
+                            radius: 5,
                             fillColor: '#5fc3ff',
                             color: '#1f2a37',
                             weight: 2,
@@ -322,7 +313,8 @@
                             marker,
                             name: name.toLowerCase(),
                             road: road.toLowerCase(),
-                            nearby: nearby.toLowerCase(),
+                            city: city.toLowerCase(),
+                            county: county.toLowerCase(),
                             id: id.toLowerCase(),
                             lat,
                             lng,
@@ -331,26 +323,27 @@
 
                     // Update counter
                     document.getElementById('cameraCount').textContent =
-                        `${markerData.length} cameras (District ${DISTRICT})`;
+                        `${markerData.length} cameras (California)`;
 
                     // Hide loading
                     document.getElementById('loading').classList.add('hidden');
                     map.invalidateSize();
 
-                    console.log(`🚦 Loaded ${markerData.length} cameras from District ${DISTRICT}`);
+                    console.log(`🚦 Loaded ${markerData.length} cameras from OpenTrafficCamMap`);
 
                     // ─── SEARCH ──────────────────────────
                     function performSearch(query) {
                         const q = query.trim().toLowerCase();
                         if (!q) {
-                            map.setView([34.0, -117.5], 9);
+                            map.setView([33.75, -117.90], 11);
                             return;
                         }
 
                         const results = markerData.filter(d =>
                             d.name.includes(q) ||
                             d.road.includes(q) ||
-                            d.nearby.includes(q) ||
+                            d.city.includes(q) ||
+                            d.county.includes(q) ||
                             d.id.includes(q)
                         );
 
@@ -361,7 +354,7 @@
 
                         // Center on first result
                         const first = results[0];
-                        map.setView([first.lat, first.lng], 12);
+                        map.setView([first.lat, first.lng], 13);
                         first.marker.openPopup();
                     }
 
@@ -379,9 +372,118 @@
                                 <div style="color:#ff6b6b;font-size:1.4rem;margin-bottom:12px;">⚠️</div>
                                 <span style="color:#ff6b6b;">Failed to load camera data.</span>
                                 <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
-                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Try changing the DISTRICT variable (1-12).</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data instead…</span>
                             `;
+
+                    // ─── FALLBACK: SAMPLE DATA ────────────
+                    loadSampleData();
                 });
+
+            // ─── FALLBACK FUNCTION ─────────────────────
+            function loadSampleData() {
+                const sampleCameras = [
+                    { name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', city: 'Santa Ana', county: 'Orange' },
+                    { name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', city: 'Orange',
+                    county: 'Orange' },
+                    { name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', city: 'Anaheim',
+                    county: 'Orange' },
+                    { name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
+                    county: 'Orange' },
+                    { name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1', city: 'Huntington Beach',
+                        county: 'Orange' },
+                    { name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91', city: 'Fullerton',
+                        county: 'Orange' },
+                    { name: 'SR-22 @ Euclid St', lat: 33.7750, lng: -117.9450, road: 'SR-22', city: 'Garden Grove',
+                        county: 'Orange' },
+                    { name: 'I-405 @ Harbor Blvd', lat: 33.6640, lng: -117.9140, road: 'I-405', city: 'Costa Mesa',
+                        county: 'Orange' },
+                    { name: 'SR-1 @ Newport Blvd', lat: 33.6270, lng: -117.9310, road: 'SR-1', city: 'Newport Beach',
+                        county: 'Orange' },
+                    { name: 'I-5 @ Oso Pkwy', lat: 33.5870, lng: -117.6680, road: 'I-5', city: 'Mission Viejo',
+                        county: 'Orange' },
+                    { name: 'SR-91 @ Harbor Blvd', lat: 33.8345, lng: -117.9145, road: 'SR-91', city: 'Anaheim',
+                        county: 'Orange' },
+                    { name: 'I-5 @ Katella Ave', lat: 33.8030, lng: -117.8880, road: 'I-5', city: 'Anaheim',
+                    county: 'Orange' },
+                    { name: 'SR-133 @ Irvine Blvd', lat: 33.6870, lng: -117.8270, road: 'SR-133', city: 'Irvine',
+                        county: 'Orange' },
+                    { name: 'I-405 @ Goldenwest St', lat: 33.7100, lng: -118.0150, road: 'I-405', city: 'Huntington Beach',
+                        county: 'Orange' },
+                    { name: 'SR-22 @ Main St', lat: 33.7498, lng: -117.8665, road: 'SR-22', city: 'Santa Ana',
+                        county: 'Orange' },
+                ];
+
+                sampleCameras.forEach(cam => {
+                    const popupContent = `
+                                <strong>${cam.name}</strong><br />
+                                Road: ${cam.road}<br />
+                                City: ${cam.city}<br />
+                                County: ${cam.county}<br />
+                                <span style="color:#5fc3ff;font-size:0.7rem;">● sample data</span>
+                            `;
+
+                    const marker = L.circleMarker([cam.lat, cam.lng], {
+                        radius: 6,
+                        fillColor: '#ff6b6b',
+                        color: '#1f2a37',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.85,
+                    })
+                        .addTo(map)
+                        .bindPopup(popupContent);
+
+                    allMarkers.push(marker);
+                    markerData.push({
+                        marker,
+                        name: cam.name.toLowerCase(),
+                        road: cam.road.toLowerCase(),
+                        city: cam.city.toLowerCase(),
+                        county: cam.county.toLowerCase(),
+                        id: '',
+                        lat: cam.lat,
+                        lng: cam.lng,
+                    });
+                });
+
+                document.getElementById('cameraCount').textContent =
+                    `${markerData.length} cameras (sample data)`;
+                document.getElementById('loading').classList.add('hidden');
+                map.invalidateSize();
+                console.log(`🚦 Loaded ${markerData.length} sample cameras (fallback)`);
+
+                // ─── SEARCH (fallback) ──────────────────
+                function performSearch(query) {
+                    const q = query.trim().toLowerCase();
+                    if (!q) {
+                        map.setView([33.75, -117.90], 11);
+                        return;
+                    }
+
+                    const results = markerData.filter(d =>
+                        d.name.includes(q) ||
+                        d.road.includes(q) ||
+                        d.city.includes(q) ||
+                        d.county.includes(q)
+                    );
+
+                    if (results.length === 0) {
+                        alert(`No cameras found for "${query}"`);
+                        return;
+                    }
+
+                    const first = results[0];
+                    map.setView([first.lat, first.lng], 13);
+                    first.marker.openPopup();
+                }
+
+                document.getElementById('searchBtn').addEventListener('click', () =>
+                    performSearch(document.getElementById('searchInput').value)
+                );
+                document.getElementById('searchInput').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') performSearch(e.target.value);
+                });
+            }
 
             // ─── RESIZE SAFETY ────────────────────────
             setTimeout(() => map.invalidateSize(), 800);
