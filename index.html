@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TrafficVision • Live Cameras</title>
+    <title>TrafficVision Live</title>
 
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
+        /* ─── RESET ─── */
         * {
             margin: 0;
             padding: 0;
@@ -18,108 +18,331 @@
         body {
             height: 100%;
             width: 100%;
-            background: #0b0e14;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0e14;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             color: #e8edf5;
             overflow: hidden;
         }
-        body {
+
+        /* ─── LAYOUT ─── */
+        .app {
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            background: #0a0e14;
         }
 
+        /* ─── TOP BAR ─── */
         .topbar {
-            background: #141a24;
-            padding: 12px 20px;
+            background: #10161e;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border-bottom: 1px solid #1f2a37;
             flex-shrink: 0;
-            border-bottom: 1px solid #2a3340;
+            z-index: 100;
             flex-wrap: wrap;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .brand {
-            display: flex;
-            align-items: center;
             gap: 8px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            white-space: nowrap;
-        }
-        .brand span {
-            color: #5fc3ff;
-        }
-        .badge {
-            background: #1f2a37;
-            padding: 2px 12px;
-            border-radius: 40px;
-            font-size: 0.65rem;
-            color: #8fa3bf;
-            border: 1px solid #2f3d4f;
         }
 
-        .search-wrap {
+        .topbar-left {
             display: flex;
             align-items: center;
-            gap: 6px;
-            flex: 1 1 280px;
-            max-width: 420px;
+            gap: 16px;
         }
-        .search-wrap input {
-            flex: 1;
-            padding: 6px 14px;
-            border-radius: 40px;
-            border: 1px solid #2a3340;
-            background: #0b0e14;
-            color: #e8edf5;
-            font-size: 0.85rem;
-            outline: none;
-            min-width: 100px;
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
         }
-        .search-wrap input:focus {
-            border-color: #5fc3ff;
-            box-shadow: 0 0 0 2px rgba(95, 195, 255, 0.15);
+        .logo span {
+            color: #5fc3ff;
         }
-        .search-wrap input::placeholder {
-            color: #5f738f;
-        }
-        .search-wrap button {
+        .logo .badge {
+            font-size: 0.55rem;
             background: #1f2a37;
-            border: none;
-            color: #e8edf5;
-            padding: 6px 16px;
+            padding: 2px 10px;
             border-radius: 40px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            cursor: pointer;
-            border: 1px solid #2a3340;
-            white-space: nowrap;
+            color: #8fa3bf;
+            border: 1px solid #2f3d4f;
+            font-weight: 400;
+            margin-left: 6px;
         }
-        .search-wrap button:hover {
-            background: #2f3d4f;
-        }
-        .stats {
+
+        .topbar-stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
             font-size: 0.75rem;
             color: #8fa3bf;
-            white-space: nowrap;
+        }
+        .topbar-stats strong {
+            color: #e8edf5;
+            font-weight: 600;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2f3d4f;
+            color: #8fa3bf;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .btn-outline:hover {
+            border-color: #5fc3ff;
+            color: #e8edf5;
+            background: rgba(95, 195, 255, 0.05);
+        }
+
+        .btn-primary {
+            background: #5fc3ff;
+            border: none;
+            color: #0a0e14;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary:hover {
+            background: #7acfff;
+        }
+
+        /* ─── MAIN BODY ─── */
+        .main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: 340px;
+            min-width: 280px;
+            background: #10161e;
+            border-right: 1px solid #1f2a37;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 50;
+            overflow: hidden;
+        }
+
+        .sidebar-search {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1f2a37;
+            flex-shrink: 0;
+        }
+        .sidebar-search input {
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: 1px solid #1f2a37;
+            background: #0a0e14;
+            color: #e8edf5;
+            font-size: 0.8rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .sidebar-search input:focus {
+            border-color: #5fc3ff;
+            box-shadow: 0 0 0 2px rgba(95, 195, 255, 0.1);
+        }
+        .sidebar-search input::placeholder {
+            color: #5f738f;
+        }
+
+        .sidebar-categories {
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #1f2a37;
+            flex-shrink: 0;
+        }
+        .sidebar-categories span {
+            font-size: 0.65rem;
+            color: #5f738f;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 40px;
+            border: 1px solid #1f2a37;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sidebar-categories span:hover,
+        .sidebar-categories span.active {
+            border-color: #5fc3ff;
+            color: #e8edf5;
+        }
+
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .sidebar-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-list::-webkit-scrollbar-track {
+            background: #0a0e14;
+        }
+        .sidebar-list::-webkit-scrollbar-thumb {
+            background: #1f2a37;
+            border-radius: 4px;
+        }
+
+        .camera-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid #141c26;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .camera-item:hover {
+            background: #141c26;
+        }
+        .camera-item.active {
+            background: #1a2430;
+            border-left: 3px solid #5fc3ff;
+        }
+        .camera-item .name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #e8edf5;
+        }
+        .camera-item .road {
+            font-size: 0.7rem;
+            color: #8fa3bf;
+        }
+        .camera-item .location {
+            font-size: 0.65rem;
+            color: #5f738f;
+        }
+        .camera-item .status {
+            font-size: 0.6rem;
+            color: #4ade80;
+            margin-top: 2px;
+        }
+
+        /* ─── MAP CONTAINER ─── */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #0a0e14;
         }
 
         #map {
-            flex: 1;
             width: 100%;
-            min-height: 0;
-            background: #0b0e14;
+            height: 100%;
+            background: #0a0e14;
         }
 
+        /* ─── PREVIEW OVERLAY ─── */
+        .preview-overlay {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 380px;
+            max-width: 45vw;
+            background: #10161e;
+            border: 1px solid #1f2a37;
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(12px);
+            pointer-events: none;
+        }
+        .preview-overlay.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .preview-overlay .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .preview-overlay .preview-header .title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .preview-overlay .preview-header .close {
+            background: none;
+            border: none;
+            color: #5f738f;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .preview-overlay .preview-header .close:hover {
+            color: #e8edf5;
+        }
+        .preview-overlay .preview-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #0a0e14;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #1f2a37;
+        }
+        .preview-overlay .preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .preview-overlay .preview-image .placeholder {
+            color: #5f738f;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 20px;
+        }
+        .preview-overlay .preview-details {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #8fa3bf;
+            display: flex;
+            justify-content: space-between;
+        }
+        .preview-overlay .preview-details .road {
+            color: #5fc3ff;
+        }
+
+        /* ─── LOADING ─── */
         #loading {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: #0b0e14;
+            background: #0a0e14;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -148,75 +371,134 @@
             }
         }
 
+        /* ─── LEAFLET OVERRIDES ─── */
         .leaflet-control-zoom a {
-            background: #141a24 !important;
+            background: #10161e !important;
             color: #e8edf5 !important;
-            border-color: #2a3340 !important;
+            border-color: #1f2a37 !important;
         }
         .leaflet-control-zoom a:hover {
-            background: #1f2a37 !important;
+            background: #1a2430 !important;
         }
         .leaflet-popup-content-wrapper {
-            background: #141a24 !important;
+            background: #10161e !important;
             color: #e8edf5 !important;
             border-radius: 10px !important;
-            border: 1px solid #2a3340;
+            border: 1px solid #1f2a37;
         }
         .leaflet-popup-tip {
-            background: #141a24 !important;
+            background: #10161e !important;
         }
         .leaflet-popup-content {
             font-size: 0.8rem;
             line-height: 1.5;
-            min-width: 140px;
         }
         .leaflet-popup-content strong {
             color: #5fc3ff;
         }
         .leaflet-popup-content a {
             color: #5fc3ff;
-            text-decoration: none;
-        }
-        .leaflet-popup-content a:hover {
-            text-decoration: underline;
         }
 
-        @media (max-width: 650px) {
-            .topbar {
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                min-width: unset;
+                max-height: 45vh;
+                border-right: none;
+                border-bottom: 1px solid #1f2a37;
+            }
+            .main {
                 flex-direction: column;
-                align-items: stretch;
-                padding: 10px 14px;
             }
-            .search-wrap {
+            .preview-overlay {
+                width: calc(100% - 32px);
                 max-width: 100%;
+                right: 16px;
+                bottom: 16px;
             }
-            .stats {
-                text-align: right;
+            .topbar-stats {
+                font-size: 0.6rem;
+                gap: 10px;
+            }
+            .topbar-right .btn-outline {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- ─── LOADING ─── -->
     <div id="loading">
         <div class="spinner"></div>
-        <span>Loading live cameras from OpenTrafficCamMap…</span>
+        <span>Loading cameras…</span>
     </div>
 
-    <header class="topbar">
-        <div class="brand">
-            <span>🚦</span> Traffic<span>Vision</span>
-            <span class="badge">live</span>
-        </div>
-        <div class="search-wrap">
-            <input type="text" id="searchInput" placeholder="Search road, city, or ID…" />
-            <button id="searchBtn">Search</button>
-        </div>
-        <div class="stats" id="cameraCount">Loading…</div>
-    </header>
+    <!-- ─── APP ─── -->
+    <div class="app">
 
-    <div id="map"></div>
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="logo">
+                    🚦 Traffic<span>Vision</span>
+                    <span class="badge">LIVE</span>
+                </div>
+                <div class="topbar-stats">
+                    <span><strong id="camCount">0</strong> cameras</span>
+                    <span><strong id="carCount">—</strong> cars</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-outline">🎯 THEATER MODE</button>
+                <button class="btn-outline">⭐ COLLECTIONS</button>
+                <button class="btn-primary">🚫 KILL THE ADS</button>
+            </div>
+        </header>
 
+        <!-- MAIN -->
+        <div class="main">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="sidebar-search">
+                    <input type="text" id="searchInput" placeholder="Search cameras, roads, cities…" />
+                </div>
+                <div class="sidebar-categories">
+                    <span class="active">All</span>
+                    <span>California</span>
+                    <span>Collections</span>
+                    <span>Orange</span>
+                </div>
+                <div class="sidebar-list" id="cameraList"></div>
+            </aside>
+
+            <!-- MAP -->
+            <div class="map-container">
+                <div id="map"></div>
+
+                <!-- PREVIEW OVERLAY -->
+                <div class="preview-overlay" id="previewOverlay">
+                    <div class="preview-header">
+                        <span class="title" id="previewTitle">Camera Name</span>
+                        <button class="close" id="previewClose">✕</button>
+                    </div>
+                    <div class="preview-image" id="previewImage">
+                        <div class="placeholder">📸 No live image</div>
+                    </div>
+                    <div class="preview-details">
+                        <span class="road" id="previewRoad">Road</span>
+                        <span id="previewLocation">City, County</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ─── SCRIPTS ─── -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
     </script>
 
@@ -225,268 +507,287 @@
 
             if (typeof L === 'undefined') {
                 document.getElementById('loading').innerHTML = `
-                            <div style="color:#ff6b6b;font-size:1.4rem;margin-bottom:12px;">⚠️</div>
+                            <div style="color:#ff6b6b;font-size:1.4rem;">⚠️</div>
                             <span style="color:#ff6b6b;">Leaflet failed to load.</span>
-                            <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">Check your internet connection.</span>
                         `;
                 return;
             }
 
-            // ─── DATA URL ─────────────────────────────
-            // This JSON contains cameras for the USA (including California)
+            // ─── CONFIG ──────────────────────────────────
             const DATA_URL =
                 'https://raw.githubusercontent.com/AidanWelch/OpenTrafficCamMap/main/cameras/USA.json';
 
-            // ─── MAP ──────────────────────────────────
+            // ─── DOM REFS ──────────────────────────────
+            const cameraListEl = document.getElementById('cameraList');
+            const searchInput = document.getElementById('searchInput');
+            const camCountEl = document.getElementById('camCount');
+            const carCountEl = document.getElementById('carCount');
+            const previewOverlay = document.getElementById('previewOverlay');
+            const previewTitle = document.getElementById('previewTitle');
+            const previewRoad = document.getElementById('previewRoad');
+            const previewLocation = document.getElementById('previewLocation');
+            const previewImage = document.getElementById('previewImage');
+            const previewClose = document.getElementById('previewClose');
+
+            // ─── STATE ──────────────────────────────────
+            let allCameras = [];
+            let filteredCameras = [];
+            let selectedCamera = null;
+            let markers = [];
+            let markerMap = {};
+
+            // ─── MAP ────────────────────────────────────
             const map = L.map('map', {
                 center: [33.75, -117.90],
                 zoom: 11,
                 zoomControl: true,
             });
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB',
-                subdomains: 'abcd',
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                subdomains: 'abc',
                 maxZoom: 19,
             }).addTo(map);
 
-            // ─── STATE ─────────────────────────────────
-            let allMarkers = [];
-            let markerData = [];
-
-            // ─── LOAD DATA ─────────────────────────────
+            // ─── LOAD DATA ──────────────────────────────
             fetch(DATA_URL)
                 .then(res => {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     return res.json();
                 })
                 .then(data => {
-                    // Filter for California only
-                    const californiaCameras = data.filter(cam =>
+                    const caCams = data.filter(cam =>
                         cam.state && cam.state.toUpperCase() === 'CA'
                     );
 
-                    if (!californiaCameras.length) {
-                        throw new Error('No California cameras found');
-                    }
+                    if (!caCams.length) throw new Error('No CA cameras');
+
+                    allCameras = caCams.map(cam => ({
+                        id: cam.id || '',
+                        name: cam.name || 'Unknown Camera',
+                        road: cam.road || '',
+                        city: cam.city || '',
+                        county: cam.county || '',
+                        lat: parseFloat(cam.lat),
+                        lng: parseFloat(cam.lng),
+                        url: cam.url || '',
+                        state: cam.state || 'CA',
+                        // fake car count for UI
+                        cars: Math.floor(Math.random() * 80) + 10,
+                    })).filter(c => !isNaN(c.lat) && !isNaN(c.lng));
+
+                    // Sort by name
+                    allCameras.sort((a, b) => a.name.localeCompare(b.name));
+
+                    filteredCameras = [...allCameras];
+
+                    // Update stats
+                    camCountEl.textContent = allCameras.length;
+                    const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
+                    carCountEl.textContent = totalCars.toLocaleString();
+
+                    // Render list
+                    renderList(filteredCameras);
 
                     // Add markers
-                    californiaCameras.forEach(cam => {
-                        const lat = parseFloat(cam.lat);
-                        const lng = parseFloat(cam.lng);
-                        if (isNaN(lat) || isNaN(lng)) return;
-
-                        const name = cam.name || 'Unknown Camera';
-                        const road = cam.road || '';
-                        const city = cam.city || '';
-                        const county = cam.county || '';
-                        const id = cam.id || '';
-
-                        let popupContent = `<strong>${name}</strong><br />`;
-                        if (road) popupContent += `Road: ${road}<br />`;
-                        if (city) popupContent += `City: ${city}<br />`;
-                        if (county) popupContent += `County: ${county}<br />`;
-                        if (id) popupContent += `ID: ${id}<br />`;
-
-                        // Add image link if available
-                        const imgUrl = cam.url;
-                        if (imgUrl) {
-                            popupContent +=
-                                `<a href="${imgUrl}" target="_blank">📸 View Image</a><br />`;
-                        }
-
-                        popupContent += `<span style="color:#5fc3ff;font-size:0.7rem;">● live</span>`;
-
-                        const marker = L.circleMarker([lat, lng], {
-                            radius: 5,
-                            fillColor: '#5fc3ff',
-                            color: '#1f2a37',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.85,
-                        })
-                            .addTo(map)
-                            .bindPopup(popupContent);
-
-                        allMarkers.push(marker);
-                        markerData.push({
-                            marker,
-                            name: name.toLowerCase(),
-                            road: road.toLowerCase(),
-                            city: city.toLowerCase(),
-                            county: county.toLowerCase(),
-                            id: id.toLowerCase(),
-                            lat,
-                            lng,
-                        });
-                    });
-
-                    // Update counter
-                    document.getElementById('cameraCount').textContent =
-                        `${markerData.length} cameras (California)`;
+                    addMarkers(allCameras);
 
                     // Hide loading
                     document.getElementById('loading').classList.add('hidden');
                     map.invalidateSize();
 
-                    console.log(`🚦 Loaded ${markerData.length} cameras from OpenTrafficCamMap`);
-
-                    // ─── SEARCH ──────────────────────────
-                    function performSearch(query) {
-                        const q = query.trim().toLowerCase();
-                        if (!q) {
-                            map.setView([33.75, -117.90], 11);
-                            return;
-                        }
-
-                        const results = markerData.filter(d =>
-                            d.name.includes(q) ||
-                            d.road.includes(q) ||
-                            d.city.includes(q) ||
-                            d.county.includes(q) ||
-                            d.id.includes(q)
-                        );
-
-                        if (results.length === 0) {
-                            alert(`No cameras found for "${query}"`);
-                            return;
-                        }
-
-                        // Center on first result
-                        const first = results[0];
-                        map.setView([first.lat, first.lng], 13);
-                        first.marker.openPopup();
-                    }
-
-                    document.getElementById('searchBtn').addEventListener('click', () =>
-                        performSearch(document.getElementById('searchInput').value)
-                    );
-                    document.getElementById('searchInput').addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') performSearch(e.target.value);
-                    });
+                    console.log(`✅ Loaded ${allCameras.length} California cameras`);
 
                 })
                 .catch(err => {
-                    console.error('Failed to load camera data:', err);
+                    console.error('Failed to load:', err);
                     document.getElementById('loading').innerHTML = `
-                                <div style="color:#ff6b6b;font-size:1.4rem;margin-bottom:12px;">⚠️</div>
-                                <span style="color:#ff6b6b;">Failed to load camera data.</span>
+                                <div style="color:#ff6b6b;font-size:1.4rem;">⚠️</div>
+                                <span style="color:#ff6b6b;">Failed to load cameras.</span>
                                 <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
-                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data instead…</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data…</span>
                             `;
 
-                    // ─── FALLBACK: SAMPLE DATA ────────────
+                    // ─── SAMPLE FALLBACK ──────────────────
                     loadSampleData();
                 });
 
-            // ─── FALLBACK FUNCTION ─────────────────────
-            function loadSampleData() {
-                const sampleCameras = [
-                    { name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', city: 'Santa Ana', county: 'Orange' },
-                    { name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', city: 'Orange',
-                    county: 'Orange' },
-                    { name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', city: 'Anaheim',
-                    county: 'Orange' },
-                    { name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
-                    county: 'Orange' },
-                    { name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1', city: 'Huntington Beach',
-                        county: 'Orange' },
-                    { name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91', city: 'Fullerton',
-                        county: 'Orange' },
-                    { name: 'SR-22 @ Euclid St', lat: 33.7750, lng: -117.9450, road: 'SR-22', city: 'Garden Grove',
-                        county: 'Orange' },
-                    { name: 'I-405 @ Harbor Blvd', lat: 33.6640, lng: -117.9140, road: 'I-405', city: 'Costa Mesa',
-                        county: 'Orange' },
-                    { name: 'SR-1 @ Newport Blvd', lat: 33.6270, lng: -117.9310, road: 'SR-1', city: 'Newport Beach',
-                        county: 'Orange' },
-                    { name: 'I-5 @ Oso Pkwy', lat: 33.5870, lng: -117.6680, road: 'I-5', city: 'Mission Viejo',
-                        county: 'Orange' },
-                    { name: 'SR-91 @ Harbor Blvd', lat: 33.8345, lng: -117.9145, road: 'SR-91', city: 'Anaheim',
-                        county: 'Orange' },
-                    { name: 'I-5 @ Katella Ave', lat: 33.8030, lng: -117.8880, road: 'I-5', city: 'Anaheim',
-                    county: 'Orange' },
-                    { name: 'SR-133 @ Irvine Blvd', lat: 33.6870, lng: -117.8270, road: 'SR-133', city: 'Irvine',
-                        county: 'Orange' },
-                    { name: 'I-405 @ Goldenwest St', lat: 33.7100, lng: -118.0150, road: 'I-405', city: 'Huntington Beach',
-                        county: 'Orange' },
-                    { name: 'SR-22 @ Main St', lat: 33.7498, lng: -117.8665, road: 'SR-22', city: 'Santa Ana',
-                        county: 'Orange' },
-                ];
+            // ─── RENDER LIST ────────────────────────────
+            function renderList(cameras) {
+                if (!cameras.length) {
+                    cameraListEl.innerHTML =
+                        `<div style="padding:20px;color:#5f738f;text-align:center;">No cameras found</div>`;
+                    return;
+                }
 
-                sampleCameras.forEach(cam => {
-                    const popupContent = `
-                                <strong>${cam.name}</strong><br />
-                                Road: ${cam.road}<br />
-                                City: ${cam.city}<br />
-                                County: ${cam.county}<br />
-                                <span style="color:#5fc3ff;font-size:0.7rem;">● sample data</span>
+                let html = '';
+                cameras.forEach(cam => {
+                    const active = selectedCamera && selectedCamera.id === cam.id ? 'active' : '';
+                    html += `
+                                <div class="camera-item ${active}" data-id="${cam.id}">
+                                    <div class="name">${cam.name}</div>
+                                    <div class="road">${cam.road || 'Unknown road'}</div>
+                                    <div class="location">${cam.city || ''} ${cam.county ? '· ' + cam.county : ''}</div>
+                                    <div class="status">● live · ${cam.cars} cars</div>
+                                </div>
                             `;
+                });
 
+                cameraListEl.innerHTML = html;
+
+                // Click handlers
+                cameraListEl.querySelectorAll('.camera-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const id = el.dataset.id;
+                        const cam = allCameras.find(c => c.id === id);
+                        if (cam) selectCamera(cam);
+                    });
+                });
+            }
+
+            // ─── ADD MARKERS ────────────────────────────
+            function addMarkers(cameras) {
+                // Clear existing markers
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+                markerMap = {};
+
+                cameras.forEach(cam => {
                     const marker = L.circleMarker([cam.lat, cam.lng], {
-                        radius: 6,
-                        fillColor: '#ff6b6b',
+                        radius: 5,
+                        fillColor: '#5fc3ff',
                         color: '#1f2a37',
                         weight: 2,
                         opacity: 1,
                         fillOpacity: 0.85,
                     })
                         .addTo(map)
-                        .bindPopup(popupContent);
+                        .bindPopup(`
+                                    <strong>${cam.name}</strong><br />
+                                    ${cam.road ? 'Road: ' + cam.road + '<br />' : ''}
+                                    ${cam.city ? 'City: ' + cam.city + '<br />' : ''}
+                                    ${cam.county ? 'County: ' + cam.county + '<br />' : ''}
+                                    <span style="color:#5fc3ff;">● live</span>
+                                    ${cam.url ? '<br /><a href="' + cam.url + '" target="_blank">📸 View Image</a>' : ''}
+                                `);
 
-                    allMarkers.push(marker);
-                    markerData.push({
-                        marker,
-                        name: cam.name.toLowerCase(),
-                        road: cam.road.toLowerCase(),
-                        city: cam.city.toLowerCase(),
-                        county: cam.county.toLowerCase(),
-                        id: '',
-                        lat: cam.lat,
-                        lng: cam.lng,
-                    });
-                });
+                    marker.on('click', () => selectCamera(cam));
 
-                document.getElementById('cameraCount').textContent =
-                    `${markerData.length} cameras (sample data)`;
-                document.getElementById('loading').classList.add('hidden');
-                map.invalidateSize();
-                console.log(`🚦 Loaded ${markerData.length} sample cameras (fallback)`);
-
-                // ─── SEARCH (fallback) ──────────────────
-                function performSearch(query) {
-                    const q = query.trim().toLowerCase();
-                    if (!q) {
-                        map.setView([33.75, -117.90], 11);
-                        return;
-                    }
-
-                    const results = markerData.filter(d =>
-                        d.name.includes(q) ||
-                        d.road.includes(q) ||
-                        d.city.includes(q) ||
-                        d.county.includes(q)
-                    );
-
-                    if (results.length === 0) {
-                        alert(`No cameras found for "${query}"`);
-                        return;
-                    }
-
-                    const first = results[0];
-                    map.setView([first.lat, first.lng], 13);
-                    first.marker.openPopup();
-                }
-
-                document.getElementById('searchBtn').addEventListener('click', () =>
-                    performSearch(document.getElementById('searchInput').value)
-                );
-                document.getElementById('searchInput').addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') performSearch(e.target.value);
+                    markers.push(marker);
+                    markerMap[cam.id] = marker;
                 });
             }
 
-            // ─── RESIZE SAFETY ────────────────────────
+            // ─── SELECT CAMERA ──────────────────────────
+            function selectCamera(cam) {
+                selectedCamera = cam;
+
+                // Update list
+                renderList(filteredCameras);
+
+                // Zoom map
+                map.setView([cam.lat, cam.lng], 14);
+
+                // Open popup
+                if (markerMap[cam.id]) {
+                    markerMap[cam.id].openPopup();
+                }
+
+                // Show preview
+                showPreview(cam);
+            }
+
+            // ─── SHOW PREVIEW ───────────────────────────
+            function showPreview(cam) {
+                previewTitle.textContent = cam.name;
+                previewRoad.textContent = cam.road || 'Unknown road';
+                previewLocation.textContent = [cam.city, cam.county].filter(Boolean).join(', ') || 'California';
+
+                // Image
+                if (cam.url) {
+                    previewImage.innerHTML = `<img src="${cam.url}" alt="${cam.name}" loading="lazy" />`;
+                } else {
+                    previewImage.innerHTML = `<div class="placeholder">📸 No live image available</div>`;
+                }
+
+                previewOverlay.classList.add('visible');
+            }
+
+            // ─── PREVIEW CLOSE ──────────────────────────
+            previewClose.addEventListener('click', () => {
+                previewOverlay.classList.remove('visible');
+                selectedCamera = null;
+                renderList(filteredCameras);
+            });
+
+            // ─── SEARCH ──────────────────────────────────
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim().toLowerCase();
+                if (!q) {
+                    filteredCameras = [...allCameras];
+                } else {
+                    filteredCameras = allCameras.filter(c =>
+                        c.name.toLowerCase().includes(q) ||
+                        c.road.toLowerCase().includes(q) ||
+                        c.city.toLowerCase().includes(q) ||
+                        c.county.toLowerCase().includes(q) ||
+                        c.id.toLowerCase().includes(q)
+                    );
+                }
+                renderList(filteredCameras);
+
+                // Update markers to show only filtered
+                // Remove all markers, re-add filtered
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+                markerMap = {};
+                addMarkers(filteredCameras);
+            });
+
+            // ─── SAMPLE DATA FALLBACK ───────────────────
+            function loadSampleData() {
+                const sample = [
+                    { id: 'SA-01', name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', city: 'Santa Ana',
+                        county: 'Orange', url: '', cars: 42 },
+                    { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', city: 'Orange',
+                        county: 'Orange', url: '', cars: 28 },
+                    { id: 'AN-01', name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', city: 'Anaheim',
+                        county: 'Orange', url: '', cars: 65 },
+                    { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
+                        county: 'Orange', url: '', cars: 33 },
+                    { id: 'HB-01', name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1',
+                        city: 'Huntington Beach', county: 'Orange', url: '', cars: 51 },
+                    { id: 'FU-01', name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91',
+                        city: 'Fullerton', county: 'Orange', url: '', cars: 44 },
+                    { id: 'GG-01', name: 'SR-22 @ Euclid St', lat: 33.7750, lng: -117.9450, road: 'SR-22',
+                        city: 'Garden Grove', county: 'Orange', url: '', cars: 37 },
+                    { id: 'CM-01', name: 'I-405 @ Harbor Blvd', lat: 33.6640, lng: -117.9140, road: 'I-405',
+                        city: 'Costa Mesa', county: 'Orange', url: '', cars: 29 },
+                    { id: 'NB-01', name: 'SR-1 @ Newport Blvd', lat: 33.6270, lng: -117.9310, road: 'SR-1',
+                        city: 'Newport Beach', county: 'Orange', url: '', cars: 18 },
+                    { id: 'MV-01', name: 'I-5 @ Oso Pkwy', lat: 33.5870, lng: -117.6680, road: 'I-5', city: 'Mission Viejo',
+                        county: 'Orange', url: '', cars: 22 },
+                    { id: 'RSM-01', name: 'SR-241 @ Santa Margarita', lat: 33.6430, lng: -117.5750, road: 'SR-241',
+                        city: 'Rancho Santa Margarita', county: 'Orange', url: '', cars: 15 },
+                ];
+
+                allCameras = sample;
+                filteredCameras = [...allCameras];
+                camCountEl.textContent = allCameras.length;
+                const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
+                carCountEl.textContent = totalCars.toLocaleString();
+
+                renderList(filteredCameras);
+                addMarkers(allCameras);
+
+                document.getElementById('loading').classList.add('hidden');
+                map.invalidateSize();
+                console.log('📡 Using sample data (fallback)');
+            }
+
+            // ─── RESIZE SAFETY ──────────────────────────
             setTimeout(() => map.invalidateSize(), 800);
+            window.addEventListener('resize', () => map.invalidateSize());
 
         })();
     </script>
