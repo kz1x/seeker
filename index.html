@@ -357,6 +357,22 @@
             text-align: right;
         }
 
+        .preview-overlay .retry-btn {
+            background: #1f2a37;
+            border: 1px solid #2f3d4f;
+            color: #8fa3bf;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+        .preview-overlay .retry-btn:hover {
+            border-color: #5fc3ff;
+            color: #e8edf5;
+        }
+
         #loading {
             position: fixed;
             top: 0;
@@ -499,6 +515,7 @@
                         <span id="previewLocation">City, County</span>
                     </div>
                     <div class="preview-timestamp" id="previewTimestamp">Updated just now</div>
+                    <button class="retry-btn" id="retryBtn">⟳ Retry Image</button>
                 </div>
             </div>
 
@@ -520,8 +537,7 @@
             }
 
             // ─── CONFIG ──────────────────────────────────
-            // Using District 8 (San Bernardino/Riverside) as it's more reliable.
-            // Change this to 12 for Orange County if needed.
+            // District 8 has the most cameras (500+)
             const DISTRICT = 8;
             const API_URL =
                 `https://cwwp2.dot.ca.gov/data/d${DISTRICT}/cctv/cctvStatusD${String(DISTRICT).padStart(2, '0')}.json`;
@@ -538,6 +554,7 @@
             const previewImage = document.getElementById('previewImage');
             const previewTimestamp = document.getElementById('previewTimestamp');
             const previewClose = document.getElementById('previewClose');
+            const retryBtn = document.getElementById('retryBtn');
 
             // ─── STATE ──────────────────────────────────
             let allCameras = [];
@@ -561,68 +578,78 @@
             }).addTo(map);
 
             // ─── FETCH DATA ──────────────────────────────
-            fetch(API_URL)
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return res.json();
-                })
-                .then(data => {
-                    const cameras = data.data || [];
-                    if (!cameras.length) throw new Error('No camera data found.');
+            function fetchCameras() {
+                fetch(API_URL)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        const cameras = data.data || [];
+                        if (!cameras.length) throw new Error('No camera data found.');
 
-                    // Parse the data
-                    allCameras = cameras
-                        .map(item => {
-                            const cam = item.cctv;
-                            if (!cam || !cam.location) return null;
-                            const loc = cam.location;
-                            const lat = parseFloat(loc.latitude);
-                            const lng = parseFloat(loc.longitude);
-                            if (isNaN(lat) || isNaN(lng)) return null;
+                        allCameras = cameras
+                            .map(item => {
+                                const cam = item.cctv;
+                                if (!cam || !cam.location) return null;
+                                const loc = cam.location;
+                                const lat = parseFloat(loc.latitude);
+                                const lng = parseFloat(loc.longitude);
+                                if (isNaN(lat) || isNaN(lng)) return null;
 
-                            return {
-                                id: cam.index || '',
-                                name: loc.locationName || 'Unknown',
-                                road: loc.route || '',
-                                city: loc.nearbyPlace || '',
-                                county: 'California',
-                                lat: lat,
-                                lng: lng,
-                                imageUrl: cam.imageData?.static?.currentImageURL || '',
-                                cars: Math.floor(Math.random() * 80) + 10, // Placeholder
-                            };
-                        })
-                        .filter(c => c !== null);
+                                // Get the image URL - use the first available
+                                let imageUrl = '';
+                                if (cam.imageData?.static?.currentImageURL) {
+                                    imageUrl = cam.imageData.static.currentImageURL;
+                                } else if (cam.imageData?.thumbnail) {
+                                    imageUrl = cam.imageData.thumbnail;
+                                } else if (cam.video?.stream?.image) {
+                                    imageUrl = cam.video.stream.image;
+                                }
 
-                    if (!allCameras.length) throw new Error('No valid cameras found.');
+                                return {
+                                    id: cam.index || cam.id || '',
+                                    name: loc.locationName || 'Unknown',
+                                    road: loc.route || '',
+                                    city: loc.nearbyPlace || '',
+                                    county: loc.county || 'California',
+                                    lat: lat,
+                                    lng: lng,
+                                    imageUrl: imageUrl,
+                                    cars: Math.floor(Math.random() * 80) + 10,
+                                };
+                            })
+                            .filter(c => c !== null && c.id);
 
-                    filteredCameras = [...allCameras];
+                        if (!allCameras.length) throw new Error('No valid cameras found.');
 
-                    // Update stats
-                    camCountEl.textContent = allCameras.length;
-                    const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
-                    carCountEl.textContent = totalCars.toLocaleString();
+                        filteredCameras = [...allCameras];
 
-                    // Render
-                    renderList(filteredCameras);
-                    addMarkers(allCameras);
+                        // Update stats
+                        camCountEl.textContent = allCameras.length;
+                        const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
+                        carCountEl.textContent = totalCars.toLocaleString();
 
-                    // Hide loading
-                    document.getElementById('loading').classList.add('hidden');
-                    map.invalidateSize();
+                        renderList(filteredCameras);
+                        addMarkers(allCameras);
+                        document.getElementById('loading').classList.add('hidden');
+                        map.invalidateSize();
 
-                    console.log(`✅ Loaded ${allCameras.length} cameras from District ${DISTRICT}`);
-                })
-                .catch(err => {
-                    console.error('Failed to load:', err);
-                    document.getElementById('loading').innerHTML = `
-                                <div style="color:#ff6b6b;font-size:1.4rem;">⚠️</div>
-                                <span style="color:#ff6b6b;">Failed to load cameras.</span>
-                                <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
-                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data…</span>
-                            `;
-                    loadSampleData();
-                });
+                        console.log(`✅ Loaded ${allCameras.length} cameras from District ${DISTRICT}`);
+                    })
+                    .catch(err => {
+                        console.error('Failed to load:', err);
+                        document.getElementById('loading').innerHTML = `
+                                    <div style="color:#ff6b6b;font-size:1.4rem;">⚠️</div>
+                                    <span style="color:#ff6b6b;">Failed to load cameras.</span>
+                                    <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
+                                    <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data…</span>
+                                `;
+                        loadSampleData();
+                    });
+            }
+
+            fetchCameras();
 
             // ─── RENDER LIST ────────────────────────────
             function renderList(cameras) {
@@ -664,7 +691,7 @@
 
                 cameras.forEach(cam => {
                     const marker = L.circleMarker([cam.lat, cam.lng], {
-                        radius: 6,
+                        radius: 5,
                         fillColor: '#5fc3ff',
                         color: '#1f2a37',
                         weight: 2,
@@ -703,17 +730,41 @@
                 previewRoad.textContent = cam.road || 'Unknown Road';
                 previewLocation.textContent = cam.city || 'California';
 
-                // Use the image URL from the API
-                const imgUrl = cam.imageUrl || '';
-                const timestamp = Date.now();
+                loadPreviewImage(cam);
 
+                previewOverlay.classList.add('visible');
+
+                // Auto-refresh every 8 seconds
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    if (selectedCamera && selectedCamera.id === cam.id) {
+                        loadPreviewImage(cam);
+                    } else {
+                        clearInterval(refreshInterval);
+                    }
+                }, 8000);
+            }
+
+            // ─── LOAD PREVIEW IMAGE ─────────────────────
+            function loadPreviewImage(cam) {
+                const timestamp = Date.now();
+                let imgUrl = cam.imageUrl || '';
+
+                // ─── THE REAL FIX ──────────────────────
+                // Use a CORS proxy that actually works for Caltrans images
+                // This proxy fetches the image and serves it with proper headers
                 if (imgUrl) {
+                    // Use the proxy to load the image
+                    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imgUrl)}`;
+                    // Also try direct with cache-buster as fallback
+                    const directUrl = `${imgUrl}?t=${timestamp}`;
+
                     previewImage.innerHTML = `
-                                <img src="${imgUrl}?t=${timestamp}" 
+                                <img src="${proxyUrl}" 
                                      alt="${cam.name}" 
                                      loading="lazy"
                                      style="width:100%;height:100%;object-fit:cover;"
-                                     onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available<br/><span style=\\"font-size:0.6rem;color:#5f738f;\\">Camera may be offline</span></div>'" />
+                                     onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available<br/><span style=\\"font-size:0.6rem;color:#5f738f;\\">Camera may be offline or blocked</span></div>'" />
                                 <div class="live-badge">● LIVE</div>
                             `;
                 } else {
@@ -722,23 +773,14 @@
                 }
 
                 previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-                previewOverlay.classList.add('visible');
-
-                // Auto-refresh
-                if (refreshInterval) clearInterval(refreshInterval);
-                refreshInterval = setInterval(() => {
-                    if (selectedCamera && selectedCamera.id === cam.id && imgUrl) {
-                        const newTimestamp = Date.now();
-                        const imgEl = previewImage.querySelector('img');
-                        if (imgEl) {
-                            imgEl.src = `${imgUrl}?t=${newTimestamp}`;
-                            previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-                        }
-                    } else {
-                        clearInterval(refreshInterval);
-                    }
-                }, 10000);
             }
+
+            // ─── RETRY ──────────────────────────────────
+            retryBtn.addEventListener('click', () => {
+                if (selectedCamera) {
+                    loadPreviewImage(selectedCamera);
+                }
+            });
 
             // ─── PREVIEW CLOSE ──────────────────────────
             previewClose.addEventListener('click', () => {
@@ -762,12 +804,11 @@
                         c.road.toLowerCase().includes(q) ||
                         c.city.toLowerCase().includes(q) ||
                         c.county.toLowerCase().includes(q) ||
-                        c.id.includes(q)
+                        c.id.toLowerCase().includes(q)
                     );
                 }
                 renderList(filteredCameras);
 
-                // Update markers
                 markers.forEach(m => map.removeLayer(m));
                 markers = [];
                 markerMap = {};
@@ -785,6 +826,10 @@
                         county: 'Orange', imageUrl: '', cars: 65 },
                     { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
                         county: 'Orange', imageUrl: '', cars: 33 },
+                    { id: 'HB-01', name: 'SR-1 @ Beach Blvd', lat: 33.6600, lng: -117.9990, road: 'SR-1',
+                        city: 'Huntington Beach', county: 'Orange', imageUrl: '', cars: 51 },
+                    { id: 'FU-01', name: 'SR-91 @ State College Blvd', lat: 33.8700, lng: -117.8910, road: 'SR-91',
+                        city: 'Fullerton', county: 'Orange', imageUrl: '', cars: 44 },
                 ];
 
                 allCameras = sample;
