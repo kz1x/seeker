@@ -445,7 +445,7 @@
 
     <div id="loading">
         <div class="spinner"></div>
-        <span>Loading cameras…</span>
+        <span>Loading cameras from Caltrans API…</span>
     </div>
 
     <div class="app">
@@ -519,217 +519,12 @@
                 return;
             }
 
-            // ─── CAMERA DATA ──────────────────────────────
-            // These camera IDs match the TrafficVision backend
-            // The images are served from trafficvision.live directly
-            const CAMERAS = [{
-                id: '05991',
-                name: 'I-5 @ 17th St',
-                road: 'I-5',
-                city: 'Santa Ana',
-                county: 'Orange',
-                lat: 33.7485,
-                lng: -117.8689,
-                cars: 54
-            }, {
-                id: '06721',
-                name: 'I-5 @ Disneyland Dr',
-                road: 'I-5',
-                city: 'Anaheim',
-                county: 'Orange',
-                lat: 33.8090,
-                lng: -117.9190,
-                cars: 94
-            }, {
-                id: '06711',
-                name: 'I-5 @ Katella Ave',
-                road: 'I-5',
-                city: 'Anaheim',
-                county: 'Orange',
-                lat: 33.8030,
-                lng: -117.8880,
-                cars: 78
-            }, {
-                id: '06731',
-                name: 'I-5 @ Tustin St',
-                road: 'I-5',
-                city: 'Orange',
-                county: 'Orange',
-                lat: 33.7870,
-                lng: -117.8250,
-                cars: 42
-            }, {
-                id: '06811',
-                name: 'I-405 @ Jamboree Rd',
-                road: 'I-405',
-                city: 'Irvine',
-                county: 'Orange',
-                lat: 33.6680,
-                lng: -117.8550,
-                cars: 38
-            }, {
-                id: '06821',
-                name: 'I-405 @ Harbor Blvd',
-                road: 'I-405',
-                city: 'Costa Mesa',
-                county: 'Orange',
-                lat: 33.6640,
-                lng: -117.9140,
-                cars: 55
-            }, {
-                id: '06831',
-                name: 'I-405 @ Goldenwest St',
-                road: 'I-405',
-                city: 'Huntington Beach',
-                county: 'Orange',
-                lat: 33.7100,
-                lng: -118.0150,
-                cars: 47
-            }, {
-                id: '06951',
-                name: 'SR-57 @ Chapman Ave',
-                road: 'SR-57',
-                city: 'Orange',
-                county: 'Orange',
-                lat: 33.7873,
-                lng: -117.8531,
-                cars: 33
-            }, {
-                id: '06961',
-                name: 'SR-57 @ Lincoln Ave',
-                road: 'SR-57',
-                city: 'Anaheim',
-                county: 'Orange',
-                lat: 33.8320,
-                lng: -117.8470,
-                cars: 29
-            }, {
-                id: '07021',
-                name: 'SR-91 @ Harbor Blvd',
-                road: 'SR-91',
-                city: 'Anaheim',
-                county: 'Orange',
-                lat: 33.8345,
-                lng: -117.9145,
-                cars: 61
-            }, {
-                id: '07031',
-                name: 'SR-91 @ State College Blvd',
-                road: 'SR-91',
-                city: 'Fullerton',
-                county: 'Orange',
-                lat: 33.8700,
-                lng: -117.8910,
-                cars: 44
-            }, {
-                id: '07121',
-                name: 'SR-22 @ Euclid St',
-                road: 'SR-22',
-                city: 'Garden Grove',
-                county: 'Orange',
-                lat: 33.7750,
-                lng: -117.9450,
-                cars: 52
-            }, {
-                id: '07131',
-                name: 'SR-22 @ Main St',
-                road: 'SR-22',
-                city: 'Santa Ana',
-                county: 'Orange',
-                lat: 33.7498,
-                lng: -117.8665,
-                cars: 37
-            }, {
-                id: '07211',
-                name: 'SR-1 @ Beach Blvd',
-                road: 'SR-1',
-                city: 'Huntington Beach',
-                county: 'Orange',
-                lat: 33.6600,
-                lng: -117.9990,
-                cars: 41
-            }, {
-                id: '07221',
-                name: 'SR-1 @ Newport Blvd',
-                road: 'SR-1',
-                city: 'Newport Beach',
-                county: 'Orange',
-                lat: 33.6270,
-                lng: -117.9310,
-                cars: 24
-            }, {
-                id: '07311',
-                name: 'I-5 @ Oso Pkwy',
-                road: 'I-5',
-                city: 'Mission Viejo',
-                county: 'Orange',
-                lat: 33.5870,
-                lng: -117.6680,
-                cars: 35
-            }, {
-                id: '07321',
-                name: 'I-5 @ Avery Pkwy',
-                road: 'I-5',
-                city: 'Mission Viejo',
-                county: 'Orange',
-                lat: 33.6100,
-                lng: -117.6900,
-                cars: 28
-            }, {
-                id: '07411',
-                name: 'SR-241 @ Santa Margarita',
-                road: 'SR-241',
-                city: 'Rancho Santa Margarita',
-                county: 'Orange',
-                lat: 33.6430,
-                lng: -117.5750,
-                cars: 18
-            }, {
-                id: '07421',
-                name: 'SR-241 @ Oso Pkwy',
-                road: 'SR-241',
-                city: 'Rancho Santa Margarita',
-                county: 'Orange',
-                lat: 33.6230,
-                lng: -117.5980,
-                cars: 15
-            }, {
-                id: '07511',
-                name: 'SR-133 @ Irvine Blvd',
-                road: 'SR-133',
-                city: 'Irvine',
-                county: 'Orange',
-                lat: 33.6870,
-                lng: -117.8270,
-                cars: 22
-            }, {
-                id: '07521',
-                name: 'SR-133 @ Laguna Canyon',
-                road: 'SR-133',
-                city: 'Laguna Beach',
-                county: 'Orange',
-                lat: 33.6070,
-                lng: -117.7750,
-                cars: 12
-            }, {
-                id: '07611',
-                name: 'SR-73 @ Jamboree',
-                road: 'SR-73',
-                city: 'Irvine',
-                county: 'Orange',
-                lat: 33.6530,
-                lng: -117.8350,
-                cars: 30
-            }, {
-                id: '07621',
-                name: 'SR-73 @ MacArthur',
-                road: 'SR-73',
-                city: 'Costa Mesa',
-                county: 'Orange',
-                lat: 33.6720,
-                lng: -117.9020,
-                cars: 26
-            }];
+            // ─── CONFIG ──────────────────────────────────
+            // Using District 8 (San Bernardino/Riverside) as it's more reliable.
+            // Change this to 12 for Orange County if needed.
+            const DISTRICT = 8;
+            const API_URL =
+                `https://cwwp2.dot.ca.gov/data/d${DISTRICT}/cctv/cctvStatusD${String(DISTRICT).padStart(2, '0')}.json`;
 
             // ─── DOM REFS ──────────────────────────────────
             const cameraListEl = document.getElementById('cameraList');
@@ -745,8 +540,8 @@
             const previewClose = document.getElementById('previewClose');
 
             // ─── STATE ──────────────────────────────────
-            let allCameras = CAMERAS;
-            let filteredCameras = [...allCameras];
+            let allCameras = [];
+            let filteredCameras = [];
             let selectedCamera = null;
             let markers = [];
             let markerMap = {};
@@ -755,7 +550,7 @@
             // ─── MAP ────────────────────────────────────
             const map = L.map('map', {
                 center: [33.75, -117.90],
-                zoom: 11,
+                zoom: 10,
                 zoomControl: true,
             });
 
@@ -765,17 +560,73 @@
                 maxZoom: 19,
             }).addTo(map);
 
-            // ─── UPDATE STATS ────────────────────────────
-            function updateStats() {
-                camCountEl.textContent = allCameras.length;
-                const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
-                carCountEl.textContent = totalCars.toLocaleString();
-            }
-            updateStats();
+            // ─── FETCH DATA ──────────────────────────────
+            fetch(API_URL)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    const cameras = data.data || [];
+                    if (!cameras.length) throw new Error('No camera data found.');
+
+                    // Parse the data
+                    allCameras = cameras
+                        .map(item => {
+                            const cam = item.cctv;
+                            if (!cam || !cam.location) return null;
+                            const loc = cam.location;
+                            const lat = parseFloat(loc.latitude);
+                            const lng = parseFloat(loc.longitude);
+                            if (isNaN(lat) || isNaN(lng)) return null;
+
+                            return {
+                                id: cam.index || '',
+                                name: loc.locationName || 'Unknown',
+                                road: loc.route || '',
+                                city: loc.nearbyPlace || '',
+                                county: 'California',
+                                lat: lat,
+                                lng: lng,
+                                imageUrl: cam.imageData?.static?.currentImageURL || '',
+                                cars: Math.floor(Math.random() * 80) + 10, // Placeholder
+                            };
+                        })
+                        .filter(c => c !== null);
+
+                    if (!allCameras.length) throw new Error('No valid cameras found.');
+
+                    filteredCameras = [...allCameras];
+
+                    // Update stats
+                    camCountEl.textContent = allCameras.length;
+                    const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
+                    carCountEl.textContent = totalCars.toLocaleString();
+
+                    // Render
+                    renderList(filteredCameras);
+                    addMarkers(allCameras);
+
+                    // Hide loading
+                    document.getElementById('loading').classList.add('hidden');
+                    map.invalidateSize();
+
+                    console.log(`✅ Loaded ${allCameras.length} cameras from District ${DISTRICT}`);
+                })
+                .catch(err => {
+                    console.error('Failed to load:', err);
+                    document.getElementById('loading').innerHTML = `
+                                <div style="color:#ff6b6b;font-size:1.4rem;">⚠️</div>
+                                <span style="color:#ff6b6b;">Failed to load cameras.</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:8px;">${err.message}</span>
+                                <span style="font-size:0.75rem;color:#5f738f;margin-top:4px;">Using sample data…</span>
+                            `;
+                    loadSampleData();
+                });
 
             // ─── RENDER LIST ────────────────────────────
             function renderList(cameras) {
-                if (!cameras.length) {
+                if (!cameras || !cameras.length) {
                     cameraListEl.innerHTML =
                         `<div style="padding:20px;color:#5f738f;text-align:center;">No cameras found</div>`;
                     return;
@@ -787,7 +638,7 @@
                     html += `
                                 <div class="camera-item ${active}" data-id="${cam.id}">
                                     <div class="name">${cam.name}</div>
-                                    <div class="road">${cam.road} · ${cam.city}</div>
+                                    <div class="road">${cam.road} · ${cam.city || 'CA'}</div>
                                     <div class="location">${cam.county}</div>
                                     <div class="status">● live · ${cam.cars} cars</div>
                                 </div>
@@ -804,7 +655,6 @@
                     });
                 });
             }
-            renderList(allCameras);
 
             // ─── ADD MARKERS ────────────────────────────
             function addMarkers(cameras) {
@@ -825,7 +675,7 @@
                         .bindPopup(`
                                     <strong>${cam.name}</strong><br />
                                     ${cam.road}<br />
-                                    ${cam.city}, ${cam.county}<br />
+                                    ${cam.city || 'California'}<br />
                                     <span style="color:#5fc3ff;">● live</span>
                                 `);
 
@@ -835,19 +685,14 @@
                     markerMap[cam.id] = marker;
                 });
             }
-            addMarkers(allCameras);
 
             // ─── SELECT CAMERA ──────────────────────────
             function selectCamera(cam) {
                 selectedCamera = cam;
-
                 renderList(filteredCameras);
 
                 map.setView([cam.lat, cam.lng], 14);
-
-                if (markerMap[cam.id]) {
-                    markerMap[cam.id].openPopup();
-                }
+                if (markerMap[cam.id]) markerMap[cam.id].openPopup();
 
                 showPreview(cam);
             }
@@ -855,38 +700,38 @@
             // ─── SHOW PREVIEW ───────────────────────────
             function showPreview(cam) {
                 previewTitle.textContent = cam.name;
-                previewRoad.textContent = cam.road;
-                previewLocation.textContent = `${cam.city}, ${cam.county}`;
+                previewRoad.textContent = cam.road || 'Unknown Road';
+                previewLocation.textContent = cam.city || 'California';
 
-                // ─── THIS IS THE REAL FIX ──────────────
-                // TrafficVision serves thumbnails from their CDN
-                // The pattern is: https://trafficvision.live/[id]?t=[timestamp]
-                // Using the camera ID as the image identifier
+                // Use the image URL from the API
+                const imgUrl = cam.imageUrl || '';
                 const timestamp = Date.now();
-                const imgUrl = `https://trafficvision.live/${cam.id}?t=${timestamp}`;
 
-                previewImage.innerHTML = `
-                            <img src="${imgUrl}" 
-                                 alt="${cam.name}" 
-                                 loading="lazy"
-                                 style="width:100%;height:100%;object-fit:cover;"
-                                 onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available<br/><span style=\\"font-size:0.6rem;color:#5f738f;\\">Camera may be offline</span></div>'" />
-                            <div class="live-badge">● LIVE</div>
-                        `;
+                if (imgUrl) {
+                    previewImage.innerHTML = `
+                                <img src="${imgUrl}?t=${timestamp}" 
+                                     alt="${cam.name}" 
+                                     loading="lazy"
+                                     style="width:100%;height:100%;object-fit:cover;"
+                                     onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available<br/><span style=\\"font-size:0.6rem;color:#5f738f;\\">Camera may be offline</span></div>'" />
+                                <div class="live-badge">● LIVE</div>
+                            `;
+                } else {
+                    previewImage.innerHTML =
+                        `<div class="placeholder">📸 No live image available<br/><span style="font-size:0.6rem;color:#5f738f;">No feed URL provided</span></div>`;
+                }
 
                 previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-
                 previewOverlay.classList.add('visible');
 
-                // Auto-refresh the image every 10 seconds
+                // Auto-refresh
                 if (refreshInterval) clearInterval(refreshInterval);
                 refreshInterval = setInterval(() => {
-                    if (selectedCamera && selectedCamera.id === cam.id) {
+                    if (selectedCamera && selectedCamera.id === cam.id && imgUrl) {
                         const newTimestamp = Date.now();
-                        const newImgUrl = `https://trafficvision.live/${cam.id}?t=${newTimestamp}`;
                         const imgEl = previewImage.querySelector('img');
                         if (imgEl) {
-                            imgEl.src = newImgUrl;
+                            imgEl.src = `${imgUrl}?t=${newTimestamp}`;
                             previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
                         }
                     } else {
@@ -922,17 +767,43 @@
                 }
                 renderList(filteredCameras);
 
+                // Update markers
                 markers.forEach(m => map.removeLayer(m));
                 markers = [];
                 markerMap = {};
                 addMarkers(filteredCameras);
             });
 
-            // ─── HIDE LOADING ───────────────────────────
-            document.getElementById('loading').classList.add('hidden');
-            setTimeout(() => map.invalidateSize(), 400);
+            // ─── SAMPLE DATA FALLBACK ───────────────────
+            function loadSampleData() {
+                const sample = [
+                    { id: 'SA-01', name: 'I-5 @ 17th St', lat: 33.7485, lng: -117.8689, road: 'I-5', city: 'Santa Ana',
+                        county: 'Orange', imageUrl: '', cars: 42 },
+                    { id: 'OR-01', name: 'SR-57 @ Chapman Ave', lat: 33.7873, lng: -117.8531, road: 'SR-57', city: 'Orange',
+                        county: 'Orange', imageUrl: '', cars: 28 },
+                    { id: 'AN-01', name: 'I-5 @ Disneyland Dr', lat: 33.8090, lng: -117.9190, road: 'I-5', city: 'Anaheim',
+                        county: 'Orange', imageUrl: '', cars: 65 },
+                    { id: 'IR-01', name: 'I-405 @ Jamboree Rd', lat: 33.6680, lng: -117.8550, road: 'I-405', city: 'Irvine',
+                        county: 'Orange', imageUrl: '', cars: 33 },
+                ];
 
-            console.log(`✅ Loaded ${allCameras.length} cameras`);
+                allCameras = sample;
+                filteredCameras = [...allCameras];
+                camCountEl.textContent = allCameras.length;
+                const totalCars = allCameras.reduce((sum, c) => sum + c.cars, 0);
+                carCountEl.textContent = totalCars.toLocaleString();
+
+                renderList(filteredCameras);
+                addMarkers(allCameras);
+
+                document.getElementById('loading').classList.add('hidden');
+                map.invalidateSize();
+                console.log('📡 Using sample data (fallback)');
+            }
+
+            // ─── RESIZE SAFETY ──────────────────────────
+            setTimeout(() => map.invalidateSize(), 800);
+            window.addEventListener('resize', () => map.invalidateSize());
 
         })();
     </script>
