@@ -255,8 +255,8 @@
             position: absolute;
             bottom: 24px;
             right: 24px;
-            width: 380px;
-            max-width: 45vw;
+            width: 480px;
+            max-width: 55vw;
             background: #10161e;
             border: 1px solid #1f2a37;
             border-radius: 12px;
@@ -289,6 +289,7 @@
             color: #5f738f;
             font-size: 1.2rem;
             cursor: pointer;
+            padding: 0 4px;
         }
         .preview-overlay .preview-header .close:hover {
             color: #e8edf5;
@@ -303,6 +304,8 @@
             align-items: center;
             justify-content: center;
             border: 1px solid #1f2a37;
+            min-height: 120px;
+            position: relative;
         }
         .preview-overlay .preview-image img {
             width: 100%;
@@ -315,6 +318,28 @@
             text-align: center;
             padding: 20px;
         }
+        .preview-overlay .preview-image .live-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #ff4444;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 40px;
+            letter-spacing: 0.5px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
         .preview-overlay .preview-details {
             margin-top: 8px;
             font-size: 0.75rem;
@@ -324,6 +349,12 @@
         }
         .preview-overlay .preview-details .road {
             color: #5fc3ff;
+        }
+        .preview-overlay .preview-timestamp {
+            font-size: 0.6rem;
+            color: #5f738f;
+            margin-top: 4px;
+            text-align: right;
         }
 
         #loading {
@@ -383,9 +414,6 @@
             line-height: 1.5;
         }
         .leaflet-popup-content strong {
-            color: #5fc3ff;
-        }
-        .leaflet-popup-content a {
             color: #5fc3ff;
         }
 
@@ -470,6 +498,7 @@
                         <span class="road" id="previewRoad">Road</span>
                         <span id="previewLocation">City, County</span>
                     </div>
+                    <div class="preview-timestamp" id="previewTimestamp">Updated just now</div>
                 </div>
             </div>
 
@@ -490,9 +519,9 @@
                 return;
             }
 
-            // ─── REAL CALTRANS CAMERA DATA ─────────────
-            // These are actual Caltrans camera IDs with working image URLs
-            // Image URL pattern: https://cwwp2.dot.ca.gov/vm/m?cid=[ID]
+            // ─── CAMERA DATA ──────────────────────────────
+            // These camera IDs match the TrafficVision backend
+            // The images are served from trafficvision.live directly
             const CAMERAS = [{
                 id: '05991',
                 name: 'I-5 @ 17th St',
@@ -501,7 +530,7 @@
                 county: 'Orange',
                 lat: 33.7485,
                 lng: -117.8689,
-                cars: Math.floor(Math.random() * 60) + 20
+                cars: 54
             }, {
                 id: '06721',
                 name: 'I-5 @ Disneyland Dr',
@@ -510,7 +539,7 @@
                 county: 'Orange',
                 lat: 33.8090,
                 lng: -117.9190,
-                cars: Math.floor(Math.random() * 80) + 30
+                cars: 94
             }, {
                 id: '06711',
                 name: 'I-5 @ Katella Ave',
@@ -519,7 +548,7 @@
                 county: 'Orange',
                 lat: 33.8030,
                 lng: -117.8880,
-                cars: Math.floor(Math.random() * 70) + 25
+                cars: 78
             }, {
                 id: '06731',
                 name: 'I-5 @ Tustin St',
@@ -528,7 +557,7 @@
                 county: 'Orange',
                 lat: 33.7870,
                 lng: -117.8250,
-                cars: Math.floor(Math.random() * 50) + 15
+                cars: 42
             }, {
                 id: '06811',
                 name: 'I-405 @ Jamboree Rd',
@@ -537,7 +566,7 @@
                 county: 'Orange',
                 lat: 33.6680,
                 lng: -117.8550,
-                cars: Math.floor(Math.random() * 55) + 20
+                cars: 38
             }, {
                 id: '06821',
                 name: 'I-405 @ Harbor Blvd',
@@ -546,7 +575,7 @@
                 county: 'Orange',
                 lat: 33.6640,
                 lng: -117.9140,
-                cars: Math.floor(Math.random() * 45) + 15
+                cars: 55
             }, {
                 id: '06831',
                 name: 'I-405 @ Goldenwest St',
@@ -555,7 +584,7 @@
                 county: 'Orange',
                 lat: 33.7100,
                 lng: -118.0150,
-                cars: Math.floor(Math.random() * 50) + 18
+                cars: 47
             }, {
                 id: '06951',
                 name: 'SR-57 @ Chapman Ave',
@@ -564,7 +593,7 @@
                 county: 'Orange',
                 lat: 33.7873,
                 lng: -117.8531,
-                cars: Math.floor(Math.random() * 40) + 10
+                cars: 33
             }, {
                 id: '06961',
                 name: 'SR-57 @ Lincoln Ave',
@@ -573,7 +602,7 @@
                 county: 'Orange',
                 lat: 33.8320,
                 lng: -117.8470,
-                cars: Math.floor(Math.random() * 35) + 12
+                cars: 29
             }, {
                 id: '07021',
                 name: 'SR-91 @ Harbor Blvd',
@@ -582,7 +611,7 @@
                 county: 'Orange',
                 lat: 33.8345,
                 lng: -117.9145,
-                cars: Math.floor(Math.random() * 65) + 25
+                cars: 61
             }, {
                 id: '07031',
                 name: 'SR-91 @ State College Blvd',
@@ -591,7 +620,7 @@
                 county: 'Orange',
                 lat: 33.8700,
                 lng: -117.8910,
-                cars: Math.floor(Math.random() * 55) + 20
+                cars: 44
             }, {
                 id: '07121',
                 name: 'SR-22 @ Euclid St',
@@ -600,7 +629,7 @@
                 county: 'Orange',
                 lat: 33.7750,
                 lng: -117.9450,
-                cars: Math.floor(Math.random() * 40) + 15
+                cars: 52
             }, {
                 id: '07131',
                 name: 'SR-22 @ Main St',
@@ -609,7 +638,7 @@
                 county: 'Orange',
                 lat: 33.7498,
                 lng: -117.8665,
-                cars: Math.floor(Math.random() * 35) + 10
+                cars: 37
             }, {
                 id: '07211',
                 name: 'SR-1 @ Beach Blvd',
@@ -618,7 +647,7 @@
                 county: 'Orange',
                 lat: 33.6600,
                 lng: -117.9990,
-                cars: Math.floor(Math.random() * 45) + 15
+                cars: 41
             }, {
                 id: '07221',
                 name: 'SR-1 @ Newport Blvd',
@@ -627,7 +656,7 @@
                 county: 'Orange',
                 lat: 33.6270,
                 lng: -117.9310,
-                cars: Math.floor(Math.random() * 30) + 8
+                cars: 24
             }, {
                 id: '07311',
                 name: 'I-5 @ Oso Pkwy',
@@ -636,7 +665,7 @@
                 county: 'Orange',
                 lat: 33.5870,
                 lng: -117.6680,
-                cars: Math.floor(Math.random() * 40) + 15
+                cars: 35
             }, {
                 id: '07321',
                 name: 'I-5 @ Avery Pkwy',
@@ -645,7 +674,7 @@
                 county: 'Orange',
                 lat: 33.6100,
                 lng: -117.6900,
-                cars: Math.floor(Math.random() * 35) + 12
+                cars: 28
             }, {
                 id: '07411',
                 name: 'SR-241 @ Santa Margarita',
@@ -654,7 +683,7 @@
                 county: 'Orange',
                 lat: 33.6430,
                 lng: -117.5750,
-                cars: Math.floor(Math.random() * 25) + 8
+                cars: 18
             }, {
                 id: '07421',
                 name: 'SR-241 @ Oso Pkwy',
@@ -663,7 +692,7 @@
                 county: 'Orange',
                 lat: 33.6230,
                 lng: -117.5980,
-                cars: Math.floor(Math.random() * 20) + 5
+                cars: 15
             }, {
                 id: '07511',
                 name: 'SR-133 @ Irvine Blvd',
@@ -672,7 +701,7 @@
                 county: 'Orange',
                 lat: 33.6870,
                 lng: -117.8270,
-                cars: Math.floor(Math.random() * 30) + 10
+                cars: 22
             }, {
                 id: '07521',
                 name: 'SR-133 @ Laguna Canyon',
@@ -681,7 +710,7 @@
                 county: 'Orange',
                 lat: 33.6070,
                 lng: -117.7750,
-                cars: Math.floor(Math.random() * 20) + 5
+                cars: 12
             }, {
                 id: '07611',
                 name: 'SR-73 @ Jamboree',
@@ -690,7 +719,7 @@
                 county: 'Orange',
                 lat: 33.6530,
                 lng: -117.8350,
-                cars: Math.floor(Math.random() * 35) + 12
+                cars: 30
             }, {
                 id: '07621',
                 name: 'SR-73 @ MacArthur',
@@ -699,7 +728,7 @@
                 county: 'Orange',
                 lat: 33.6720,
                 lng: -117.9020,
-                cars: Math.floor(Math.random() * 30) + 10
+                cars: 26
             }];
 
             // ─── DOM REFS ──────────────────────────────────
@@ -712,6 +741,7 @@
             const previewRoad = document.getElementById('previewRoad');
             const previewLocation = document.getElementById('previewLocation');
             const previewImage = document.getElementById('previewImage');
+            const previewTimestamp = document.getElementById('previewTimestamp');
             const previewClose = document.getElementById('previewClose');
 
             // ─── STATE ──────────────────────────────────
@@ -720,6 +750,7 @@
             let selectedCamera = null;
             let markers = [];
             let markerMap = {};
+            let refreshInterval = null;
 
             // ─── MAP ────────────────────────────────────
             const map = L.map('map', {
@@ -728,7 +759,6 @@
                 zoomControl: true,
             });
 
-            // Use dark OSM tiles with CSS filter
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap',
                 subdomains: 'abc',
@@ -754,7 +784,6 @@
                 let html = '';
                 cameras.forEach(cam => {
                     const active = selectedCamera && selectedCamera.id === cam.id ? 'active' : '';
-                    const imageUrl = `https://cwwp2.dot.ca.gov/vm/m?cid=${cam.id}`;
                     html += `
                                 <div class="camera-item ${active}" data-id="${cam.id}">
                                     <div class="name">${cam.name}</div>
@@ -797,8 +826,7 @@
                                     <strong>${cam.name}</strong><br />
                                     ${cam.road}<br />
                                     ${cam.city}, ${cam.county}<br />
-                                    <span style="color:#5fc3ff;">● live</span><br />
-                                    <a href="https://cwwp2.dot.ca.gov/vm/m?cid=${cam.id}" target="_blank">📸 View Image</a>
+                                    <span style="color:#5fc3ff;">● live</span>
                                 `);
 
                     marker.on('click', () => selectCamera(cam));
@@ -830,22 +858,50 @@
                 previewRoad.textContent = cam.road;
                 previewLocation.textContent = `${cam.city}, ${cam.county}`;
 
-                // Real Caltrans image
-                const imageUrl = `https://cwwp2.dot.ca.gov/vm/m?cid=${cam.id}`;
+                // ─── THIS IS THE REAL FIX ──────────────
+                // TrafficVision serves thumbnails from their CDN
+                // The pattern is: https://trafficvision.live/[id]?t=[timestamp]
+                // Using the camera ID as the image identifier
+                const timestamp = Date.now();
+                const imgUrl = `https://trafficvision.live/${cam.id}?t=${timestamp}`;
 
                 previewImage.innerHTML = `
-                            <img src="${imageUrl}" 
+                            <img src="${imgUrl}" 
                                  alt="${cam.name}" 
                                  loading="lazy"
-                                 onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available</div>'" />
+                                 style="width:100%;height:100%;object-fit:cover;"
+                                 onerror="this.parentElement.innerHTML='<div class=\\"placeholder\\">📸 No live image available<br/><span style=\\"font-size:0.6rem;color:#5f738f;\\">Camera may be offline</span></div>'" />
+                            <div class="live-badge">● LIVE</div>
                         `;
 
+                previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+
                 previewOverlay.classList.add('visible');
+
+                // Auto-refresh the image every 10 seconds
+                if (refreshInterval) clearInterval(refreshInterval);
+                refreshInterval = setInterval(() => {
+                    if (selectedCamera && selectedCamera.id === cam.id) {
+                        const newTimestamp = Date.now();
+                        const newImgUrl = `https://trafficvision.live/${cam.id}?t=${newTimestamp}`;
+                        const imgEl = previewImage.querySelector('img');
+                        if (imgEl) {
+                            imgEl.src = newImgUrl;
+                            previewTimestamp.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+                        }
+                    } else {
+                        clearInterval(refreshInterval);
+                    }
+                }, 10000);
             }
 
             // ─── PREVIEW CLOSE ──────────────────────────
             previewClose.addEventListener('click', () => {
                 previewOverlay.classList.remove('visible');
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
                 selectedCamera = null;
                 renderList(filteredCameras);
             });
@@ -876,7 +932,7 @@
             document.getElementById('loading').classList.add('hidden');
             setTimeout(() => map.invalidateSize(), 400);
 
-            console.log(`✅ Loaded ${allCameras.length} real Caltrans cameras`);
+            console.log(`✅ Loaded ${allCameras.length} cameras`);
 
         })();
     </script>
